@@ -1,0 +1,27 @@
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Virtual environments
+venv/
+env/
+.env
+
+# IDEs
+.idea/
+.vscode/
+
+# Model outputs and checkpoints
+model_output/
+fine_tuned_codet5/
+*.pt
+*.pth
+*.bin
+*.h5
+*.safetensors
+
+# OS generated files
+.DS_Store
+Thumbs.db
