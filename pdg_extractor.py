@@ -1,4 +1,5 @@
 import ast
+import re
 
 class PDGExtractor(ast.NodeVisitor):
     def __init__(self):
@@ -112,6 +113,64 @@ def extract_pdg_context(source_code: str) -> str:
         return pdg_representation.strip()
     except Exception as e:
         return f"PDG parsing failed: {str(e)}"
+
+
+def extract_pdg_graph(source_code: str) -> dict:
+    """
+    Extracts structured PDG nodes and edges for visualization.
+    Edges point from the dependency source to the dependent target.
+    """
+    try:
+        tree = ast.parse(source_code)
+        extractor = PDGExtractor()
+        extractor.visit(tree)
+
+        nodes = {"root": "Program root"}
+        for node_text in extractor.nodes:
+            node_id, _, label = node_text.partition(": ")
+            if node_id:
+                nodes[node_id] = label or node_id
+
+        edges = []
+        for edge_text in extractor.control_edges:
+            match = re.match(r"(?P<target>\S+) depends on (?P<source>\S+) \(Control\)", edge_text)
+            if match:
+                edges.append(
+                    {
+                        "source": match.group("source"),
+                        "target": match.group("target"),
+                        "kind": "Control",
+                        "label": "control",
+                    }
+                )
+
+        for edge_text in extractor.data_edges:
+            match = re.match(
+                r"(?P<target>\S+) uses '(?P<var>[^']+)' from (?P<source>\S+) \(Data\)",
+                edge_text,
+            )
+            if match:
+                edges.append(
+                    {
+                        "source": match.group("source"),
+                        "target": match.group("target"),
+                        "kind": "Data",
+                        "label": match.group("var"),
+                    }
+                )
+
+        return {
+            "status": "ok",
+            "nodes": nodes,
+            "edges": edges,
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e),
+            "nodes": {},
+            "edges": [],
+        }
 
 if __name__ == "__main__":
     sample_code = '''

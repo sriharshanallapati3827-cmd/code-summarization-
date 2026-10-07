@@ -5,3 +5,5 @@ datasets
 requests
 python-dotenv
 streamlit
+matplotlib
+psutil

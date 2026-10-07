@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Code Summarization & Green Computing - Architecture Document</title>
+<style>
+    body {
+        font-family: 'Calibri', 'Segoe UI', Arial, sans-serif;
+        font-size: 11.5pt;
+        line-height: 1.5;
+        color: #1f2937;
+        margin: 40px;
+    }
+    h1 {
+        color: #1e3a8a;
+        font-size: 22pt;
+        border-bottom: 2.5px solid #1e3a8a;
+        padding-bottom: 8px;
+        margin-bottom: 4px;
+    }
+    .subtitle {
+        font-size: 13pt;
+        color: #4b5563;
+        font-weight: normal;
+        margin-top: 0px;
+        margin-bottom: 25px;
+    }
+    h2 {
+        color: #1e40af;
+        font-size: 16pt;
+        border-bottom: 1.5px solid #cbd5e1;
+        padding-bottom: 5px;
+        margin-top: 30px;
+    }
+    h3 {
+        color: #0f766e;
+        font-size: 13pt;
+        margin-top: 20px;
+    }
+    p, li {
+        font-size: 11pt;
+        color: #334155;
+    }
+    .badge {
+        display: inline-block;
+        padding: 3px 8px;
+        font-size: 9pt;
+        font-weight: bold;
+        border-radius: 4px;
+        background-color: #e0e7ff;
+        color: #3730a3;
+    }
+    .callout {
+        background-color: #f8fafc;
+        border-left: 4.5px solid #3b82f6;
+        padding: 12px 16px;
+        margin: 15px 0;
+        border-radius: 0 6px 6px 0;
+    }
+    .callout-green {
+        background-color: #f0fdf4;
+        border-left: 4.5px solid #16a34a;
+        padding: 12px 16px;
+        margin: 15px 0;
+        border-radius: 0 6px 6px 0;
+    }
+    .callout-amber {
+        background-color: #fffbeb;
+        border-left: 4.5px solid #d97706;
+        padding: 12px 16px;
+        margin: 15px 0;
+        border-radius: 0 6px 6px 0;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+        font-size: 10.5pt;
+    }
+    th {
+        background-color: #1e3a8a;
+        color: #ffffff;
+        text-align: left;
+        padding: 10px;
+        border: 1px solid #1e3a8a;
+    }
+    td {
+        padding: 9px 10px;
+        border: 1px solid #cbd5e1;
+        vertical-align: top;
+    }
+    tr:nth-child(even) {
+        background-color: #f8fafc;
+    }
+    .diagram-box {
+        background-color: #0f172a;
+        color: #f8fafc;
+        font-family: 'Consolas', 'Courier New', monospace;
+        font-size: 9.5pt;
+        padding: 18px;
+        border-radius: 8px;
+        line-height: 1.4;
+        white-space: pre;
+        margin: 20px 0;
+    }
+    .agent-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 14px;
+        margin-bottom: 12px;
+        background-color: #ffffff;
+    }
+    .agent-title {
+        font-weight: bold;
+        font-size: 12pt;
+        color: #1e3a8a;
+        margin-bottom: 4px;
+    }
+</style>
+</head>
+<body>
+
+<h1>Project Architecture & System Evolution</h1>
+<div class="subtitle"><strong>Project:</strong> Code Summarization Using AST, PDG, NLP & Green Computing<br><strong>Author / Student:</strong> K. Leela Krishna (24CSB0A30)</div>
+
+<div class="callout">
+    <strong>Document Objective:</strong> This document presents two distinct architectural blueprints for this project in clear, humanized terms:
+    <ol style="margin-top: 6px; margin-bottom: 0;">
+        <li><strong>Architecture 1: Existing System (Current Baseline)</strong> &mdash; How the current code works, step-by-step, and its technical limitations.</li>
+        <li><strong>Architecture 2: Proposed Agentic System (Target State)</strong> &mdash; The enhanced design featuring 4 Autonomous AI Agents, Self-Healing error recovery, Green Code Refactoring (Before vs. After), Multi-Level Summaries, and an Interactive Moving PDG Graph.</li>
+    </ol>
+</div>
+
+<hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 30px 0;">
+
+<h2>PART 1: The Existing System Architecture</h2>
+
+<p>In simple terms, the existing system is like a <strong>one-way conveyor belt</strong>. You place a piece of Python code at the start, it runs through three fixed tools one by one, and it outputs a short explanation along with a static energy estimate.</p>
+
+<div class="diagram-box">
+========================================================================================
+                          EXISTING SYSTEM: 4-STAGE LINEAR PIPELINE
+========================================================================================
+
+ [ User Python Code ] 
+          │
+          ▼
+ [ 1. Standard Python Parser (ast.parse) ]
+          │ 
+          ├───► If Syntax / Indentation Error ──► [ ❌ PIPELINE CRASHES WITH RED ERROR ]
+          │
+          ▼ (If code is syntactically valid)
+ ┌────────────────────────────────────────────────────────────────────────────────────┐
+ │ 2. STATIC FEATURE EXTRACTION                                                       │
+ │    • AST Extractor  (ast_extractor.py)  ──► Extracts function names, args, loops   │
+ │    • PDG Extractor  (pdg_extractor.py)  ──► Captures Control & Data text edges     │
+ │    • Green Profiler (green_computing.py)──► Counts loops & estimates kWh / CO2     │
+ └────────────────────────────────┬───────────────────────────────────────────────────┘
+                                  │
+                                  ▼
+ ┌────────────────────────────────────────────────────────────────────────────────────┐
+ │ 3. SINGLE-SHOT AI PROMPT (model_pipeline.py)                                       │
+ │    Prompt = Code + Extracted PDG text                                              │
+ │    • Calls Groq / HuggingFace API (or AST rule fallback)                           │
+ │    • Produces: 1 generic summary sentence                                         │
+ └────────────────────────────────┬───────────────────────────────────────────────────┘
+                                  │
+                                  ▼
+ ┌────────────────────────────────────────────────────────────────────────────────────┐
+ │ 4. PRESENTATION SCREEN (gui_app.py)                                                │
+ │    • Displays the single summary sentence                                          │
+ │    • Static Eco-score number & basic Streamlit bar charts                          │
+ │    • Fixed, non-interactive Graphviz dependency circle diagram                     │
+ └────────────────────────────────────────────────────────────────────────────────────┘
+========================================================================================
+</div>
+
+<h3>How the Existing Components Work (In Plain English):</h3>
+
+<ol>
+    <li><strong>Input & AST Parsing:</strong> When you provide code, Python's built-in parser reads the grammatical structure. It produces an <em>Abstract Syntax Tree</em> (the code's skeleton). 
+    <br><em>Problem:</em> If the user misses a single colon or quotation mark, the program crashes instantly without trying to understand what the user meant.</li>
+    
+    <li><strong>PDG Dependency Extraction:</strong> It scans the code to see which lines depend on other lines (e.g., Line 5 needs the variable calculated at Line 2). It writes these dependencies out as plain text sentences.</li>
+    
+    <li><strong>Single-Shot LLM Call:</strong> It packs the code and dependencies into one big prompt and sends it to an open-source model (like Llama 3.1 or Qwen 2.5). The model responds once with a 1-to-2 sentence summary.
+    <br><em>Problem:</em> The model doesn't check if its answer was accurate, and it only produces one fixed type of summary.</li>
+    
+    <li><strong>Green Computing Profiler:</strong> It counts loops, nested levels, and file reads. It uses a mathematical formula to assign an Eco Score out of 100.
+    <br><em>Problem:</em> It tells you your code is slow or power-wasting, but it cannot fix the code for you.</li>
+</ol>
+
+<div class="callout-amber">
+    <strong>Summary of Existing Bottlenecks:</strong>
+    <ul>
+        <li><strong>Fragile:</strong> Unhandled syntax typos cause hard crashes.</li>
+        <li><strong>Passive:</strong> The AI only speaks when spoken to; it does not verify or self-correct.</li>
+        <li><strong>Diagnostic only:</strong> Flags inefficient code, but cannot rewrite it into an efficient version.</li>
+        <li><strong>Static UI:</strong> The dependency graph is a flat image that users cannot drag, zoom, or interact with.</li>
+    </ul>
+</div>
+
+<hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 40px 0;">
+
+<h2>PART 2: The Proposed Agentic System Architecture</h2>
+
+<p>Instead of a rigid one-way script, the proposed architecture introduces an <strong>Autonomous Multi-Agent Team</strong>. Think of it as a team of 5 specialized digital engineers sitting in a room together, collaborating, testing, and improving your code.</p>
+
+<div class="diagram-box">
+========================================================================================
+                  PROPOSED SYSTEM: AUTONOMOUS MULTI-AGENT ARCHITECTURE
+========================================================================================
+
+                       [ User Enters Code (May have errors) ]
+                                         │
+                                         ▼
+ ┌────────────────────────────────────────────────────────────────────────────────────┐
+ │ STAGE 1: INGESTION & SELF-HEALING GUARD                                            │
+ │                                                                                    │
+ │   Does the code have a syntax / indentation error?                                 │
+ │        ├──► YES: 🩹 AGENT 0 (Self-Healing Agent)                                   │
+ │        │         • Reads traceback & line error                                    │
+ │        │         • Autonomously fixes missing colon, quote, or indent              │
+ │        │         • Sends alert: "Self-healed 1 syntax typo at line 4"              │
+ │        │                                                                           │
+ │        └──► NO:  Proceeds directly                                                 │
+ └───────────────────────────────────────┬────────────────────────────────────────────┘
+                                         │ Clean, Validated Code
+                                         ▼
+ ┌────────────────────────────────────────────────────────────────────────────────────┐
+ │ STAGE 2: MULTI-AGENT COLLABORATION ENGINE                                          │
+ │                                                                                    │
+ │  ┌─────────────────────────────────┐       ┌────────────────────────────────────┐  │
+ │  │ 🕵️ AGENT 1: Structural Inspector │       │ 🌿 AGENT 2: Green Computing Auditor│  │
+ │  │ • Extracts AST tree & functions │       │ • Analyzes loop depths & recursion │  │
+ │  │ • Maps Control & Data flow edges│──────►│ • Calculates baseline Eco Score    │  │
+ │  │ • Produces: Structural Dossier  │       │ • Produces: Carbon & Energy Audit  │  │
+ │  └────────────────┬────────────────┘       └─────────────────┬──────────────────┘  │
+ │                   │                                          │                     │
+ │                   ├──────────────────┬───────────────────────┤                     │
+ │                   ▼                  │                       ▼                     │
+ │  ┌─────────────────────────────────┐ │     ┌────────────────────────────────────┐  │
+ │  │ ✍️ AGENT 3: Multi-Level         │ │     │ ⚡ AGENT 4: Green Optimizer        │  │
+ │  │    Summarizer                   │ │     │    & Verifier                      │  │
+ │  │ • Executive Summary (Manager)   │ │     │ • Formulates energy-saving plan    │  │
+ │  │ • Developer Walkthrough (Dev)   │ │     │ • Rewrites code to be fast & green │  │
+ │  │ • Production Docstring Generator│ │     └─────────────────┬──────────────────┘  │
+ │  └─────────────────────────────────┘ │                       │                     │
+ │                                      │                       ▼                     │
+ │                                      │     ┌────────────────────────────────────┐  │
+ │                                      │     │ AUTONOMOUS VERIFICATION LOOP       │  │
+ │                                      │     │ • Does rewritten code parse?       │  │
+ │                                      │     │ • Did Eco Score improve?           │  │
+ │                                      │     │ • Self-reflects & re-tries if not  │  │
+ │                                      │     └─────────────────┬──────────────────┘  │
+ └──────────────────────────────────────┼───────────────────────┼─────────────────────┘
+                                        │                       │
+                                        ▼                       ▼
+ ┌────────────────────────────────────────────────────────────────────────────────────┐
+ │ STAGE 3: NEXT-GENERATION INTERACTIVE DASHBOARD                                     │
+ │                                                                                    │
+ │  1. Live Agent Thought Trace: Real-time status cards of all agents working         │
+ │  2. Green Code Refactorer: Side-by-side Before vs. After code with diff viewer     │
+ │  3. Verified Energy Jump: Eco Score 58/100 ➔ 94/100 (62% energy saved!)            │
+ │  4. 3-in-1 Summary Suite: Toggle between Executive, Detailed, & Docstrings        │
+ │  5. Physics-Based Moving PDG: Interactive draggable, zoomable network graph        │
+ └────────────────────────────────────────────────────────────────────────────────────┘
+========================================================================================
+</div>
+
+<h3>Meet the 5 Specialized AI Agents:</h3>
+
+<div class="agent-card">
+    <div class="agent-title">🩹 Agent 0: The Self-Healing Agent (Error Recovery Specialist)</div>
+    <p><strong>Everyday Analogy:</strong> Like an automatic spell-checker in Microsoft Word that instantly fixes small typos before the document is sent for printing.</p>
+    <p><strong>Job:</strong> If a student forgets a colon (<code>:</code>) after an <code>if</code> statement or has bad indentation, this agent catches the exact line error, patches the code autonomously, and alerts the user: <em>"Detected and healed 1 syntax error on Line 4 before running analysis."</em></p>
+</div>
+
+<div class="agent-card">
+    <div class="agent-title">🕵️ Agent 1: The Structural Inspector (AST & PDG Detective)</div>
+    <p><strong>Everyday Analogy:</strong> Like a structural architect examining the blueprint of a building before renovation begins.</p>
+    <p><strong>Job:</strong> Analyzes the code's skeleton using AST and builds a complete map of control and data dependencies (who passes what data to whom). It compiles this into a clean <em>Structural Dossier</em>.</p>
+</div>
+
+<div class="agent-card">
+    <div class="agent-title">🌿 Agent 2: The Green Computing Auditor (Energy Inspector)</div>
+    <p><strong>Everyday Analogy:</strong> Like an energy efficiency inspector rating household appliances with an Energy Star sticker.</p>
+    <p><strong>Job:</strong> Evaluates the code against software sustainability metrics: checks for deeply nested loops ($O(N^2)$ or $O(N^3)$), unmemoized recursion, and repeated file access. It assigns a baseline Eco Score (e.g., 55/100) and details the exact bottlenecks.</p>
+</div>
+
+<div class="agent-card">
+    <div class="agent-title">✍️ Agent 3: The Multi-Level Summarizer (Technical Communicator)</div>
+    <p><strong>Everyday Analogy:</strong> Like a skilled journalist who can write a 1-sentence headline for a busy CEO, a detailed story for engineers, or technical documentation for a manual.</p>
+    <p><strong>Job:</strong> Instead of producing just one sentence, it generates three selectable output tiers:
+        <ul>
+            <li><strong>Executive Summary:</strong> Plain English, non-technical explanation.</li>
+            <li><strong>Developer Walkthrough:</strong> Detailed explanation of algorithms, inputs, and outputs.</li>
+            <li><strong>Auto-Docstring Generator:</strong> Ready-to-copy, standard Google/Sphinx format docstrings complete with parameter types and return descriptions.</li>
+        </ul>
+    </p>
+</div>
+
+<div class="agent-card">
+    <div class="agent-title">⚡ Agent 4: The Autonomous Green Optimizer & Verifier (Senior Refactorer)</div>
+    <p><strong>Everyday Analogy:</strong> Like an expert mechanic who doesn't just tell you your car engine is burning too much fuel, but actually tunes the engine, takes it on a test lap, and proves it now uses 50% less gas.</p>
+    <p><strong>Job:</strong>
+        <ol>
+            <li>Reads Agent 2's audit warnings (e.g., nested loops).</li>
+            <li>Rewrites the code into an optimized, green version (e.g., using sets, list comprehensions, or caching).</li>
+            <li><strong>Autonomous Verification Loop:</strong> It runs its own rewritten code back through the AST parser and green profiler. If it caused a syntax error or failed to improve the Eco Score, it self-reflects, fixes the mistake, and re-tests.</li>
+            <li>Once validated, it outputs the certified green code with a verified Eco-Score improvement (e.g., 55/100 &rarr; 92/100).</li>
+        </ol>
+    </p>
+</div>
+
+<hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 30px 0;">
+
+<h2>PART 3: Feature-by-Feature Comparison Table</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th style="width: 25%;">Feature Dimension</th>
+            <th style="width: 37%;">Architecture 1 (Existing Baseline)</th>
+            <th style="width: 38%;">Architecture 2 (Proposed Agentic System)</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>System Nature</strong></td>
+            <td>Linear script (one-way pipeline without feedback loops).</td>
+            <td>Autonomous multi-agent system with collaboration and self-correction.</td>
+        </tr>
+        <tr>
+            <td><strong>Handling Bad Input / Typos</strong></td>
+            <td><strong>Crashes immediately</strong> if there is a missing colon, quote, or bad indentation.</td>
+            <td><strong>Self-Healing:</strong> Diagnoses error, patches the code autonomously, and continues seamlessly.</td>
+        </tr>
+        <tr>
+            <td><strong>Summarization Output</strong></td>
+            <td>Single fixed 1&ndash;2 sentence string.</td>
+            <td><strong>3-Tier Suite:</strong> Executive summary, Developer walkthrough, and production-ready Docstrings.</td>
+        </tr>
+        <tr>
+            <td><strong>Green Computing Action</strong></td>
+            <td>Diagnostic only (reports a low score and static tips).</td>
+            <td><strong>Active Refactoring:</strong> Rewrites inefficient code into green code and calculates energy saved.</td>
+        </tr>
+        <tr>
+            <td><strong>Verification Mechanism</strong></td>
+            <td>None (assumes model output is correct).</td>
+            <td><strong>Closed Verification Loop:</strong> Verifies syntax safety and confirms Eco Score increase.</td>
+        </tr>
+        <tr>
+            <td><strong>Dependency Graph (PDG)</strong></td>
+            <td>Static, flat Graphviz circles with no movement.</td>
+            <td><strong>Physics-Based Interactive Graph:</strong> Nodes float, bounce, and can be dragged, zoomed, and clicked.</td>
+        </tr>
+        <tr>
+            <td><strong>User Experience</strong></td>
+            <td>Basic text boxes and standard bar charts.</td>
+            <td>Modern Glassmorphism dashboard with live Agent Thought Traces and side-by-side code diff viewer.</td>
+        </tr>
+    </tbody>
+</table>
+
+<hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 30px 0;">
+
+<h2>PART 4: How to Explain Both Architectures to Your Guide / Examiner</h2>
+
+<p>When presenting your project to your guide or an evaluation panel, use this simple 3-step narrative:</p>
+
+<div class="callout-green">
+    <p><strong>Step 1: Explain the Existing Baseline (What you started with):</strong><br>
+    <em>"Our baseline system was built as a linear code summarizer. It extracts the code's grammatical structure (AST) and data dependencies (PDG) and asks an LLM for a single summary, along with an Eco Score. While functional, it had two major limitations: it crashed whenever a user made a small syntax typo, and it only pointed out efficiency flaws without offering a way to fix them."</em></p>
+
+    <p><strong>Step 2: Introduce the Agentic Upgrade (What you are building):</strong><br>
+    <em>"To make the system truly intelligent, we evolved it into an Autonomous Multi-Agent Architecture consisting of 5 specialized agents. A Self-Healing Agent protects against syntax crashes. An Inspector and Green Auditor diagnose structural and energy bottlenecks. A Summarizer generates multi-level documentation. And most importantly, an Optimizer Agent rewrites the code to be greener and verifies its own work inside a self-correction loop."</em></p>
+
+    <p><strong>Step 3: Highlight the Visual & Interactive Innovations:</strong><br>
+    <em>"On the frontend, users don't just see plain text. They see a live Agent Thought Trace, an interactive physics-driven dependency graph where nodes can be dragged and examined, and a side-by-side Before-vs-After comparison proving verified energy reduction."</em></p>
+</div>
+
+</body>
+</html>

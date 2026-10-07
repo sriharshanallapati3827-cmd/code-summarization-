@@ -1,0 +1,608 @@
+<html xmlns:o='urn:schemas-microsoft-com:office:office'
+      xmlns:w='urn:schemas-microsoft-com:office:word'
+      xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+<meta charset="utf-8">
+<title>Project Architecture - WPS Office Editable</title>
+<!--[if gte mso 9]>
+<xml>
+ <w:WordDocument>
+  <w:View>Print</w:View>
+  <w:Zoom>100</w:Zoom>
+  <w:DoNotOptimizeForBrowser/>
+ </w:WordDocument>
+</xml>
+<![endif]-->
+<style>
+@page {
+    size: 8.5in 11.0in;
+    margin: 0.8in 0.8in 0.8in 0.8in;
+    mso-header-margin: .5in;
+    mso-footer-margin: .5in;
+}
+body {
+    font-family: 'Calibri', 'Segoe UI', Arial, sans-serif;
+    font-size: 11pt;
+    line-height: 1.45;
+    color: #1e293b;
+}
+h1 {
+    color: #1e3a8a;
+    font-size: 20pt;
+    font-weight: bold;
+    text-align: center;
+    border-bottom: 2pt solid #1e3a8a;
+    padding-bottom: 5px;
+    margin-bottom: 3px;
+}
+.subtitle {
+    text-align: center;
+    font-size: 11.5pt;
+    color: #475569;
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+h2 {
+    color: #1e40af;
+    font-size: 14.5pt;
+    font-weight: bold;
+    margin-top: 24px;
+    margin-bottom: 10px;
+    border-bottom: 1.5pt solid #cbd5e1;
+    padding-bottom: 4px;
+}
+h3 {
+    color: #0f766e;
+    font-size: 12pt;
+    font-weight: bold;
+    margin-top: 16px;
+    margin-bottom: 6px;
+}
+p, li {
+    font-size: 10.5pt;
+    color: #334155;
+}
+.note-box {
+    background-color: #f1f5f9;
+    border-left: 4.5pt solid #2563eb;
+    padding: 10px 14px;
+    margin: 12px 0;
+}
+.warning-box {
+    background-color: #fffbeb;
+    border-left: 4.5pt solid #d97706;
+    padding: 10px 14px;
+    margin: 12px 0;
+}
+
+/* FLOW TABLE FOR EXISTING SYSTEM */
+table.flow-table {
+    width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+td.flow-box {
+    background-color: #f8fafc;
+    border: 1.5pt solid #3b82f6;
+    padding: 10px 14px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 10.5pt;
+    color: #0f172a;
+}
+td.arrow-down {
+    text-align: center;
+    font-size: 16pt;
+    font-weight: bold;
+    color: #2563eb;
+    padding: 2px 0;
+    line-height: 1;
+}
+
+/* 3-COLUMN TABLE FOR PROPOSED SYSTEM */
+table.grid-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px;
+    margin: 15px 0;
+}
+th.th-agent {
+    background-color: #4f46e5;
+    color: #ffffff;
+    font-size: 10.5pt;
+    font-weight: bold;
+    padding: 9px 8px;
+    text-align: center;
+    border: 1pt solid #4f46e5;
+    width: 29%;
+}
+th.th-arrow {
+    background-color: #ffffff;
+    border: none;
+    width: 3%;
+}
+th.th-main {
+    background-color: #1e3a8a;
+    color: #ffffff;
+    font-size: 10.5pt;
+    font-weight: bold;
+    padding: 9px 8px;
+    text-align: center;
+    border: 1pt solid #1e3a8a;
+    width: 33%;
+}
+th.th-support {
+    background-color: #047857;
+    color: #ffffff;
+    font-size: 10.5pt;
+    font-weight: bold;
+    padding: 9px 8px;
+    text-align: center;
+    border: 1pt solid #047857;
+    width: 32%;
+}
+
+td.box-agent {
+    background-color: #eef2ff;
+    border: 1.5pt solid #6366f1;
+    padding: 9px 11px;
+    font-size: 9.5pt;
+    color: #312e81;
+    font-weight: normal;
+    vertical-align: middle;
+}
+td.box-main {
+    background-color: #f0f9ff;
+    border: 1.5pt solid #0284c7;
+    padding: 9px 11px;
+    font-size: 9.5pt;
+    color: #0c4a6e;
+    font-weight: bold;
+    text-align: center;
+    vertical-align: middle;
+}
+td.box-support {
+    background-color: #ecfdf5;
+    border: 1.5pt solid #10b981;
+    padding: 9px 11px;
+    font-size: 9pt;
+    color: #064e3b;
+    vertical-align: middle;
+}
+td.cell-arrow-h {
+    text-align: center;
+    font-size: 15pt;
+    font-weight: bold;
+    color: #3b82f6;
+    vertical-align: middle;
+    padding: 0 1px;
+}
+tr.row-arrow-v td {
+    text-align: center;
+    font-size: 14pt;
+    font-weight: bold;
+    color: #6366f1;
+    padding: 1px 0;
+    line-height: 1;
+}
+
+/* AGENT CARD */
+div.agent-card {
+    border: 1pt solid #cbd5e1;
+    background-color: #f8fafc;
+    padding: 11px 14px;
+    margin-bottom: 10px;
+}
+.agent-name {
+    font-weight: bold;
+    font-size: 11pt;
+    color: #1e3a8a;
+    margin-bottom: 3px;
+}
+
+/* COMPARISON TABLE */
+table.comp-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+    font-size: 9.8pt;
+}
+table.comp-table th {
+    background-color: #1e3a8a;
+    color: #ffffff;
+    text-align: left;
+    padding: 8px 10px;
+    border: 1pt solid #1e3a8a;
+}
+table.comp-table td {
+    padding: 8px 10px;
+    border: 1pt solid #cbd5e1;
+    vertical-align: top;
+}
+table.comp-table tr:nth-child(even) {
+    background-color: #f8fafc;
+}
+</style>
+</head>
+<body>
+
+<h1>Project Architecture & System Evolution</h1>
+<div class="subtitle">
+    <strong>Project Title:</strong> Code Summarization & Green Computing Using AST, PDG & Agentic AI<br>
+    <strong>Author / Student:</strong> M. SATHWIK AND N. HARSHA
+</div>
+
+<div class="note-box">
+    <strong>Editable WPS Office Document:</strong> All sections, descriptions, and diagram boxes in this document are fully editable. You can click into any box or cell to rewrite text, customize terms, or change colors directly in WPS Office.
+</div>
+
+<hr style="border: 0; border-top: 1pt solid #cbd5e1; margin: 20px 0;">
+
+<!-- ========================================== -->
+<!-- PART 1: THE EXISTING SYSTEM ARCHITECTURE   -->
+<!-- ========================================== -->
+
+<h2>PART 1: The Existing System Architecture</h2>
+
+<p>In simple terms, the existing system functions like a <strong>one-way conveyor belt</strong>. You place a piece of Python code at the start, it runs through three fixed tools one by one, and it outputs a short explanation along with a static energy estimate.</p>
+
+<table class="flow-table">
+    <tr>
+        <td class="flow-box">
+            User selects or pastes Python code<br>
+            <span style="font-weight: normal; font-size: 9pt; color: #64748b;">(Benchmark program or sample code snippet)</span>
+        </td>
+    </tr>
+    <tr><td class="arrow-down">&darr;</td></tr>
+    <tr>
+        <td class="flow-box">
+            Standard Python Parsing (ast.parse)<br>
+            <span style="font-weight: normal; font-size: 9pt; color: #64748b;">(Parses source code into syntactic tree &bull; Crashes on syntax typos)</span>
+        </td>
+    </tr>
+    <tr><td class="arrow-down">&darr;</td></tr>
+    <tr>
+        <td class="flow-box">
+            Extract AST Structural Features (ast_extractor.py)<br>
+            <span style="font-weight: normal; font-size: 9pt; color: #64748b;">(Extracts function names, arguments, loops, conditions, and class definitions)</span>
+        </td>
+    </tr>
+    <tr><td class="arrow-down">&darr;</td></tr>
+    <tr>
+        <td class="flow-box">
+            Extract Program Dependence Graph (pdg_extractor.py)<br>
+            <span style="font-weight: normal; font-size: 9pt; color: #64748b;">(Captures Control Dependencies and Data Flow Edges in plain text)</span>
+        </td>
+    </tr>
+    <tr><td class="arrow-down">&darr;</td></tr>
+    <tr>
+        <td class="flow-box">
+            Measure Static Green Metrics (green_computing.py)<br>
+            <span style="font-weight: normal; font-size: 9pt; color: #64748b;">(Counts loops, nesting depths, recursion &bull; Computes baseline Eco Score)</span>
+        </td>
+    </tr>
+    <tr><td class="arrow-down">&darr;</td></tr>
+    <tr>
+        <td class="flow-box">
+            Single-Shot LLM API Call (model_pipeline.py)<br>
+            <span style="font-weight: normal; font-size: 9pt; color: #64748b;">(Assembles prompt with code + PDG text &bull; Calls Groq / HuggingFace model)</span>
+        </td>
+    </tr>
+    <tr><td class="arrow-down">&darr;</td></tr>
+    <tr>
+        <td class="flow-box">
+            Generate Single Summary Output<br>
+            <span style="font-weight: normal; font-size: 9pt; color: #64748b;">(Produces a single 1-2 sentence English summary &bull; Rule-based fallback if offline)</span>
+        </td>
+    </tr>
+    <tr><td class="arrow-down">&darr;</td></tr>
+    <tr>
+        <td class="flow-box">
+            Display Results on Streamlit GUI (gui_app.py)<br>
+            <span style="font-weight: normal; font-size: 9pt; color: #64748b;">(Displays text summary, static Graphviz PDG image, and baseline Eco-score)</span>
+        </td>
+    </tr>
+</table>
+
+<h3>How the Existing Components Work (In Plain English):</h3>
+
+<ol>
+    <li><strong>Input & AST Parsing:</strong> When you provide code, Python's built-in parser reads the grammatical structure to produce an <em>Abstract Syntax Tree</em> (the code's skeleton).<br>
+    <em>Problem:</em> If the user misses a single colon or quotation mark, the program crashes instantly without trying to understand what the user meant.</li>
+    
+    <li><strong>PDG Dependency Extraction:</strong> It scans the code to see which lines depend on other lines (e.g., Line 5 needs the variable calculated at Line 2). It writes these dependencies out as plain text sentences.</li>
+    
+    <li><strong>Single-Shot LLM Call:</strong> It packs the code and dependencies into one big prompt and sends it to an open-source model (like Llama 3.1 or Qwen 2.5). The model responds once with a 1-to-2 sentence summary.<br>
+    <em>Problem:</em> The model doesn't check if its answer was accurate, and it only produces one fixed type of summary.</li>
+    
+    <li><strong>Green Computing Profiler:</strong> It counts loops, nested levels, and file reads. It uses a mathematical formula to assign an Eco Score out of 100.<br>
+    <em>Problem:</em> It tells you your code is slow or power-wasting, but it cannot fix the code for you.</li>
+</ol>
+
+<div class="warning-box">
+    <strong>Summary of Existing Bottlenecks:</strong>
+    <ul>
+        <li><strong>Fragile:</strong> Unhandled syntax typos cause hard crashes.</li>
+        <li><strong>Passive:</strong> The AI only speaks when spoken to; it does not verify or self-correct.</li>
+        <li><strong>Diagnostic only:</strong> Flags inefficient code, but cannot rewrite it into an efficient version.</li>
+        <li><strong>Static UI:</strong> The dependency graph is a flat image that users cannot drag, zoom, or interact with.</li>
+    </ul>
+</div>
+
+<hr style="border: 0; border-top: 1pt solid #cbd5e1; margin: 25px 0;">
+
+<!-- ========================================== -->
+<!-- PART 2: THE PROPOSED AGENTIC ARCHITECTURE -->
+<!-- ========================================== -->
+
+<h2>PART 2: The Proposed Agentic System Architecture</h2>
+
+<p>Instead of a rigid one-way script, the proposed architecture introduces an <strong>Autonomous Multi-Agent Team</strong>. Think of it as a team of 5 specialized digital engineers sitting in a room together, collaborating, testing, and improving your code.</p>
+
+<table class="grid-table">
+    <thead>
+        <tr>
+            <th class="th-agent">Agentic AI Role</th>
+            <th class="th-arrow"></th>
+            <th class="th-main">Code & Optimization Pipeline</th>
+            <th class="th-arrow"></th>
+            <th class="th-support">Supporting Modules</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- ROW 1 -->
+        <tr>
+            <td class="box-agent">Understand code, inspect syntax, detect errors, and suggest/apply instant patches</td>
+            <td class="cell-arrow-h">&rarr;</td>
+            <td class="box-main">User pastes Python code<br><span style="font-size: 8.5pt; font-weight: normal; color: #475569;">(Input Code Ingestion)</span></td>
+            <td class="cell-arrow-h">&rarr;</td>
+            <td class="box-support">
+                <strong>&bull; Self-Healing Code Agent</strong><br>
+                &ndash; Detect syntax & indentation errors<br>
+                &ndash; Autonomously patch missing colons/quotes<br>
+                &ndash; Provide instant error-recovery feedback
+            </td>
+        </tr>
+        <tr class="row-arrow-v">
+            <td>&darr;</td><td></td><td>&darr;</td><td></td><td>&darr;</td>
+        </tr>
+
+        <!-- ROW 2 -->
+        <tr>
+            <td class="box-agent">Check syntax grammar, inspect hierarchy, and extract structural code components</td>
+            <td class="cell-arrow-h">&rarr;</td>
+            <td class="box-main">AST Structural Analysis<br><span style="font-size: 8.5pt; font-weight: normal; color: #475569;">(Abstract Syntax Tree Extraction)</span></td>
+            <td class="cell-arrow-h">&rarr;</td>
+            <td class="box-support">
+                <strong>&bull; Structural Dossier Generator</strong><br>
+                &ndash; Extract function signatures & arguments<br>
+                &ndash; Track scope, returns, and variables<br>
+                &ndash; Detect class & decorator patterns
+            </td>
+        </tr>
+        <tr class="row-arrow-v">
+            <td>&darr;</td><td></td><td>&darr;</td><td></td><td>&darr;</td>
+        </tr>
+
+        <!-- ROW 3 -->
+        <tr>
+            <td class="box-agent">Trace control & data flow paths, link variable definitions to usage nodes</td>
+            <td class="cell-arrow-h">&rarr;</td>
+            <td class="box-main">PDG Dependency Extraction<br><span style="font-size: 8.5pt; font-weight: normal; color: #475569;">(Program Dependence Graph)</span></td>
+            <td class="cell-arrow-h">&rarr;</td>
+            <td class="box-support">
+                <strong>&bull; Physics-Based Dynamic PDG</strong><br>
+                &ndash; Interactive draggable nodes & elastic zoom<br>
+                &ndash; Control vs. Data dependency coloring<br>
+                &ndash; Live edge inspection on node click
+            </td>
+        </tr>
+        <tr class="row-arrow-v">
+            <td>&darr;</td><td></td><td>&darr;</td><td></td><td>&darr;</td>
+        </tr>
+
+        <!-- ROW 4 -->
+        <tr>
+            <td class="box-agent">Audit efficiency, evaluate loops, recursion, I/O calls, and calculate carbon footprint</td>
+            <td class="cell-arrow-h">&rarr;</td>
+            <td class="box-main">Green Computing Static Profiling<br><span style="font-size: 8.5pt; font-weight: normal; color: #475569;">(Complexity & Carbon Metrics)</span></td>
+            <td class="cell-arrow-h">&rarr;</td>
+            <td class="box-support">
+                <strong>&bull; Green Software Engineering Profiler</strong><br>
+                &ndash; Compute Eco Score (0&ndash;100)<br>
+                &ndash; Estimate energy (kWh) & CO2e emissions<br>
+                &ndash; Identify nested loop & recursion bottlenecks
+            </td>
+        </tr>
+        <tr class="row-arrow-v">
+            <td>&darr;</td><td></td><td>&darr;</td><td></td><td>&darr;</td>
+        </tr>
+
+        <!-- ROW 5 -->
+        <tr>
+            <td class="box-agent">Synthesize comprehensive documentation tailored for different audiences</td>
+            <td class="cell-arrow-h">&rarr;</td>
+            <td class="box-main">Multi-Level Summarization<br><span style="font-size: 8.5pt; font-weight: normal; color: #475569;">(3-Tier Documentation Engine)</span></td>
+            <td class="cell-arrow-h">&rarr;</td>
+            <td class="box-support">
+                <strong>&bull; Multi-Perspective Documentation</strong><br>
+                &ndash; Executive Summary for managers<br>
+                &ndash; Technical Walkthrough for developers<br>
+                &ndash; Auto-generated Google/Sphinx Docstrings
+            </td>
+        </tr>
+        <tr class="row-arrow-v">
+            <td>&darr;</td><td></td><td>&darr;</td><td></td><td>&darr;</td>
+        </tr>
+
+        <!-- ROW 6 -->
+        <tr>
+            <td class="box-agent">Formulate energy-saving plan, select optimization rules, rewrite inefficient code</td>
+            <td class="cell-arrow-h">&rarr;</td>
+            <td class="box-main">Autonomous Code Refactoring<br><span style="font-size: 8.5pt; font-weight: normal; color: #475569;">(Green Optimizer Agent)</span></td>
+            <td class="cell-arrow-h">&rarr;</td>
+            <td class="box-support">
+                <strong>&bull; Green Code Optimizer</strong><br>
+                &ndash; Flatten nested loops into O(1) lookups<br>
+                &ndash; Replace recursion with memoization<br>
+                &ndash; Apply generator pipelines to save RAM
+            </td>
+        </tr>
+        <tr class="row-arrow-v">
+            <td>&darr;</td><td></td><td>&darr;</td><td></td><td>&darr;</td>
+        </tr>
+
+        <!-- ROW 7 -->
+        <tr>
+            <td class="box-agent">Validate syntax correctness, verify safety, and measure eco improvements</td>
+            <td class="cell-arrow-h">&rarr;</td>
+            <td class="box-main">Verification & Validation Loop<br><span style="font-size: 8.5pt; font-weight: normal; color: #475569;">(Self-Correction Engine)</span></td>
+            <td class="cell-arrow-h">&rarr;</td>
+            <td class="box-support">
+                <strong>&bull; Closed-Loop Self-Correction</strong><br>
+                &ndash; If syntax error: reflect and re-optimize<br>
+                &ndash; Verify Eco-Score improvement<br>
+                &ndash; Certify green refactored code
+            </td>
+        </tr>
+        <tr class="row-arrow-v">
+            <td>&darr;</td><td></td><td>&darr;</td><td></td><td>&darr;</td>
+        </tr>
+
+        <!-- ROW 8 -->
+        <tr>
+            <td class="box-agent">Compare original vs optimized code, quantify energy saved, explain decisions</td>
+            <td class="cell-arrow-h">&rarr;</td>
+            <td class="box-main">Before vs. After Comparison<br><span style="font-size: 8.5pt; font-weight: normal; color: #475569;">(Diff Analysis & Classification)</span></td>
+            <td class="cell-arrow-h">&rarr;</td>
+            <td class="box-support">
+                <strong>&bull; Optimization Regression & Savings</strong><br>
+                &ndash; Side-by-side code diff visualization<br>
+                &ndash; Eco Score gain (e.g., 55 &rarr; 94/100)<br>
+                &ndash; Quantified energy & CO2 reduction %
+            </td>
+        </tr>
+        <tr class="row-arrow-v">
+            <td>&darr;</td><td></td><td>&darr;</td><td></td><td>&darr;</td>
+        </tr>
+
+        <!-- ROW 9 -->
+        <tr>
+            <td class="box-agent">Coordinate multi-agent thought trace, render interactive views and analytics</td>
+            <td class="cell-arrow-h">&rarr;</td>
+            <td class="box-main">Display in Agentic Web Studio<br><span style="font-size: 8.5pt; font-weight: normal; color: #475569;">(Interactive Modern GUI)</span></td>
+            <td class="cell-arrow-h">&rarr;</td>
+            <td class="box-support">
+                <strong>&bull; Real-Time Agentic Studio</strong><br>
+                &ndash; Live Agent Thought Trace log<br>
+                &ndash; Observe &rarr; Analyze &rarr; Decide &rarr; Act stages<br>
+                &ndash; Interactive Q&amp;A on code decisions
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>Meet the 5 Specialized AI Agents:</h3>
+
+<div class="agent-card">
+    <div class="agent-name">🩹 Agent 0: The Self-Healing Agent (Error Recovery Specialist)</div>
+    <p><strong>Everyday Analogy:</strong> Like an automatic spell-checker in Microsoft Word that instantly fixes small typos before the document is sent for printing.</p>
+    <p><strong>Job:</strong> If a user forgets a colon (<code>:</code>) after an <code>if</code> statement or has bad indentation, this agent catches the exact line error, patches the code autonomously, and alerts the user: <em>"Detected and healed 1 syntax error on Line 4 before running analysis."</em></p>
+</div>
+
+<div class="agent-card">
+    <div class="agent-name">🕵️ Agent 1: The Structural Inspector (AST & PDG Detective)</div>
+    <p><strong>Everyday Analogy:</strong> Like a structural architect examining the blueprint of a building before renovation begins.</p>
+    <p><strong>Job:</strong> Analyzes the code's skeleton using AST and builds a complete map of control and data dependencies (who passes what data to whom). It compiles this into a clean <em>Structural Dossier</em>.</p>
+</div>
+
+<div class="agent-card">
+    <div class="agent-name">🌿 Agent 2: The Green Computing Auditor (Energy Inspector)</div>
+    <p><strong>Everyday Analogy:</strong> Like an energy efficiency inspector rating household appliances with an Energy Star sticker.</p>
+    <p><strong>Job:</strong> Evaluates the code against software sustainability metrics: checks for deeply nested loops ($O(N^2)$ or $O(N^3)$), unmemoized recursion, and repeated file access. It assigns a baseline Eco Score (e.g., 55/100) and details the exact bottlenecks.</p>
+</div>
+
+<div class="agent-card">
+    <div class="agent-name">✍️ Agent 3: The Multi-Level Summarizer (Technical Communicator)</div>
+    <p><strong>Everyday Analogy:</strong> Like a skilled journalist who can write a 1-sentence headline for a busy CEO, a detailed story for engineers, or technical documentation for a manual.</p>
+    <p><strong>Job:</strong> Instead of producing just one sentence, it generates three selectable output tiers:
+        <ul>
+            <li><strong>Executive Summary:</strong> Plain English, non-technical explanation.</li>
+            <li><strong>Developer Walkthrough:</strong> Detailed explanation of algorithms, inputs, and outputs.</li>
+            <li><strong>Auto-Docstring Generator:</strong> Ready-to-copy, standard Google/Sphinx format docstrings complete with parameter types and return descriptions.</li>
+        </ul>
+    </p>
+</div>
+
+<div class="agent-card">
+    <div class="agent-name">⚡ Agent 4: The Autonomous Green Optimizer & Verifier (Senior Refactorer)</div>
+    <p><strong>Everyday Analogy:</strong> Like an expert mechanic who doesn't just tell you your car engine is burning too much fuel, but actually tunes the engine, takes it on a test lap, and proves it now uses 50% less gas.</p>
+    <p><strong>Job:</strong>
+        <ol>
+            <li>Reads Agent 2's audit warnings (e.g., nested loops).</li>
+            <li>Rewrites the code into an optimized, green version (e.g., using sets, list comprehensions, or caching).</li>
+            <li><strong>Autonomous Verification Loop:</strong> It runs its own rewritten code back through the AST parser and green profiler. If it caused a syntax error or failed to improve the Eco Score, it self-reflects, fixes the mistake, and re-tests.</li>
+            <li>Once validated, it outputs the certified green code with a verified Eco-Score improvement (e.g., 55/100 &rarr; 94/100).</li>
+        </ol>
+    </p>
+</div>
+
+<hr style="border: 0; border-top: 1pt solid #cbd5e1; margin: 25px 0;">
+
+<!-- ========================================== -->
+<!-- PART 3: FEATURE-BY-FEATURE COMPARISON      -->
+<!-- ========================================== -->
+
+<h2>PART 3: Feature-by-Feature Comparison Table</h2>
+
+<table class="comp-table">
+    <thead>
+        <tr>
+            <th style="width: 24%;">Feature Dimension</th>
+            <th style="width: 38%;">Architecture 1 (Existing Baseline)</th>
+            <th style="width: 38%;">Architecture 2 (Proposed Agentic System)</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>System Nature</strong></td>
+            <td>Linear script (one-way pipeline without feedback loops).</td>
+            <td>Autonomous multi-agent system with collaboration and self-correction.</td>
+        </tr>
+        <tr>
+            <td><strong>Handling Bad Input / Typos</strong></td>
+            <td><strong>Crashes immediately</strong> if there is a missing colon, quote, or bad indentation.</td>
+            <td><strong>Self-Healing:</strong> Diagnoses error, patches the code autonomously, and continues seamlessly.</td>
+        </tr>
+        <tr>
+            <td><strong>Summarization Output</strong></td>
+            <td>Single fixed 1&ndash;2 sentence string.</td>
+            <td><strong>3-Tier Suite:</strong> Executive summary, Developer walkthrough, and production-ready Docstrings.</td>
+        </tr>
+        <tr>
+            <td><strong>Green Computing Action</strong></td>
+            <td>Diagnostic only (reports a low score and static tips).</td>
+            <td><strong>Active Refactoring:</strong> Rewrites inefficient code into green code and calculates energy saved.</td>
+        </tr>
+        <tr>
+            <td><strong>Verification Mechanism</strong></td>
+            <td>None (assumes model output is correct).</td>
+            <td><strong>Closed Verification Loop:</strong> Verifies syntax safety and confirms Eco Score increase.</td>
+        </tr>
+        <tr>
+            <td><strong>Dependency Graph (PDG)</strong></td>
+            <td>Static, flat Graphviz circles with no movement.</td>
+            <td><strong>Physics-Based Interactive Graph:</strong> Nodes float, bounce, and can be dragged, zoomed, and clicked.</td>
+        </tr>
+        <tr>
+            <td><strong>User Experience</strong></td>
+            <td>Basic text boxes and standard bar charts.</td>
+            <td>Modern Glassmorphism dashboard with live Agent Thought Traces and side-by-side code diff viewer.</td>
+        </tr>
+    </tbody>
+</table>
+
+</body>
+</html>

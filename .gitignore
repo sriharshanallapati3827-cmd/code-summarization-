@@ -25,3 +25,7 @@ fine_tuned_codet5/
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# Matplotlib cache and logs
+.matplotlib/
+*.log

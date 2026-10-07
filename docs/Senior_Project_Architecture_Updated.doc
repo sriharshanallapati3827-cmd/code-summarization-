@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Senior Project Architecture - Existing vs Proposed Agentic System</title>
+<style>
+    body {
+        font-family: 'Calibri', 'Segoe UI', Arial, sans-serif;
+        font-size: 11pt;
+        line-height: 1.45;
+        color: #1e293b;
+        margin: 35px 40px;
+    }
+    h1 {
+        color: #1e3a8a;
+        font-size: 21pt;
+        border-bottom: 2.5px solid #1e3a8a;
+        padding-bottom: 6px;
+        margin-bottom: 4px;
+        text-align: center;
+    }
+    .header-sub {
+        text-align: center;
+        font-size: 12pt;
+        color: #475569;
+        margin-top: 0;
+        margin-bottom: 25px;
+    }
+    h2 {
+        color: #1e40af;
+        font-size: 15pt;
+        margin-top: 28px;
+        margin-bottom: 12px;
+        border-bottom: 1.5px solid #cbd5e1;
+        padding-bottom: 5px;
+    }
+    p, li {
+        font-size: 10.5pt;
+        color: #334155;
+    }
+    .intro-box {
+        background-color: #f1f5f9;
+        border-left: 5px solid #2563eb;
+        padding: 12px 16px;
+        margin: 15px 0 25px 0;
+        border-radius: 0 6px 6px 0;
+        font-size: 10.5pt;
+    }
+
+    /* FLOWCHART TABLES FOR EXISTING SYSTEM */
+    .flow-table {
+        width: 100%;
+        max-width: 650px;
+        margin: 15px auto;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    .flow-box {
+        background-color: #f8fafc;
+        border: 2px solid #3b82f6;
+        border-radius: 8px;
+        padding: 12px 18px;
+        text-align: center;
+        font-weight: 600;
+        font-size: 11pt;
+        color: #0f172a;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+    }
+    .flow-box-sub {
+        display: block;
+        font-weight: normal;
+        font-size: 9.5pt;
+        color: #64748b;
+        margin-top: 3px;
+    }
+    .arrow-down {
+        text-align: center;
+        font-size: 18pt;
+        font-weight: bold;
+        color: #2563eb;
+        padding: 4px 0;
+        line-height: 1;
+    }
+
+    /* 3-COLUMN AGENTIC GRID TABLE */
+    .grid-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 10px;
+        margin: 20px 0;
+    }
+    .grid-table th {
+        padding: 12px 10px;
+        font-size: 11pt;
+        font-weight: bold;
+        text-align: center;
+        border: 1px solid #1e3a8a;
+    }
+    .th-agent {
+        background-color: #4f46e5;
+        color: #ffffff;
+        border-radius: 6px 0 0 6px;
+        width: 28%;
+    }
+    .th-arrow {
+        background-color: #ffffff;
+        color: #64748b;
+        border: none !important;
+        width: 4%;
+    }
+    .th-main {
+        background-color: #1e3a8a;
+        color: #ffffff;
+        width: 32%;
+    }
+    .th-support {
+        background-color: #047857;
+        color: #ffffff;
+        border-radius: 0 6px 6px 0;
+        width: 32%;
+    }
+
+    /* EDITABLE BOXES IN GRID */
+    .box-agent {
+        background-color: #eef2ff;
+        border: 1.8px solid #6366f1;
+        border-radius: 8px;
+        padding: 11px 13px;
+        font-size: 10pt;
+        color: #312e81;
+        font-weight: 500;
+        vertical-align: middle;
+    }
+    .box-main {
+        background-color: #f0f9ff;
+        border: 1.8px solid #0284c7;
+        border-radius: 8px;
+        padding: 11px 13px;
+        font-size: 10pt;
+        color: #0c4a6e;
+        font-weight: 600;
+        text-align: center;
+        vertical-align: middle;
+    }
+    .box-support {
+        background-color: #ecfdf5;
+        border: 1.8px solid #10b981;
+        border-radius: 8px;
+        padding: 11px 13px;
+        font-size: 9.5pt;
+        color: #064e3b;
+        vertical-align: middle;
+    }
+    .cell-arrow-h {
+        text-align: center;
+        font-size: 16pt;
+        font-weight: bold;
+        color: #3b82f6;
+        vertical-align: middle;
+        padding: 0 2px;
+    }
+    .row-arrow-v td {
+        text-align: center;
+        font-size: 15pt;
+        font-weight: bold;
+        color: #6366f1;
+        padding: 2px 0;
+        line-height: 1;
+    }
+    .bullet-list {
+        margin: 4px 0 0 0;
+        padding-left: 16px;
+        font-weight: normal;
+        font-size: 9pt;
+        line-height: 1.35;
+        color: #047857;
+    }
+    .tag-title {
+        font-weight: bold;
+        display: block;
+        margin-bottom: 3px;
+        color: #065f46;
+        font-size: 9.5pt;
+    }
+</style>
+</head>
+<body>
+
+<h1>Senior Project Architecture</h1>
+<div class="header-sub">
+    <strong>Project Title:</strong> Code Summarization & Green Computing Using AST, PDG & Agentic AI<br>
+    <strong>Candidate Name:</strong> K. Leela Krishna (24CSB0A30)
+</div>
+
+<div class="intro-box">
+    <strong>System Evolution Summary:</strong> This document displays the architectural diagrams for both the baseline project and the fully completed Agentic AI system. All steps are arranged in editable boxes with directional workflow arrows, showing the interaction between the <strong>Agentic AI Roles</strong>, the <strong>Main Processing Pipeline</strong>, and the <strong>Supporting Intelligence Modules</strong>.
+</div>
+
+<!-- ========================================== -->
+<!-- SECTION 1: SENIOR PROJECT - EXISTING SYSTEM -->
+<!-- ========================================== -->
+
+<h2>Senior Project &ndash; Existing System</h2>
+<p>The existing system functions as a rigid, one-way procedural pipeline. Code is parsed, features are extracted, and a single-shot prompt generates a summary.</p>
+
+<table class="flow-table">
+    <tr>
+        <td class="flow-box">
+            User selects or pastes Python code
+            <span class="flow-box-sub">(Benchmark or sample code snippet)</span>
+        </td>
+    </tr>
+    <tr><td class="arrow-down">&darr;</td></tr>
+    <tr>
+        <td class="flow-box">
+            Standard Python Parsing (ast.parse)
+            <span class="flow-box-sub">(Parses source code into syntactic tree &bull; Crashes on syntax typos)</span>
+        </td>
+    </tr>
+    <tr><td class="arrow-down">&darr;</td></tr>
+    <tr>
+        <td class="flow-box">
+            Extract AST Structural Features (ast_extractor.py)
+            <span class="flow-box-sub">(Extracts function names, arguments, loops, conditions, and class definitions)</span>
+        </td>
+    </tr>
+    <tr><td class="arrow-down">&darr;</td></tr>
+    <tr>
+        <td class="flow-box">
+            Extract Program Dependence Graph (pdg_extractor.py)
+            <span class="flow-box-sub">(Captures Control Dependencies and Data Flow Edges in plain text)</span>
+        </td>
+    </tr>
+    <tr><td class="arrow-down">&darr;</td></tr>
+    <tr>
+        <td class="flow-box">
+            Measure Static Green Metrics (green_computing.py)
+            <span class="flow-box-sub">(Counts loops, nesting depths, recursion &bull; Computes baseline Eco Score)</span>
+        </td>
+    </tr>
+    <tr><td class="arrow-down">&darr;</td></tr>
+    <tr>
+        <td class="flow-box">
+            Single-Shot LLM API Call (model_pipeline.py)
+            <span class="flow-box-sub">(Assembles prompt with code + PDG text &bull; Calls Groq / HuggingFace model)</span>
+        </td>
+    </tr>
+    <tr><td class="arrow-down">&darr;</td></tr>
+    <tr>
+        <td class="flow-box">
+            Generate Single Summary Output
+            <span class="flow-box-sub">(Produces a single 1-2 sentence English summary &bull; Rule-based fallback if offline)</span>
+        </td>
+    </tr>
+    <tr><td class="arrow-down">&darr;</td></tr>
+    <tr>
+        <td class="flow-box">
+            Display Results on Streamlit GUI (gui_app.py)
+            <span class="flow-box-sub">(Displays text summary, static Graphviz PDG image, and baseline Eco-score)</span>
+        </td>
+    </tr>
+</table>
+
+<br><hr style="border: 0; border-top: 1.5px solid #cbd5e1; margin: 30px 0;"><br>
+
+<!-- =================================================== -->
+<!-- SECTION 2: PROPOSED PROJECT - FULLY COMPLETED SYSTEM -->
+<!-- =================================================== -->
+
+<h2>Proposed Project &ndash; Fully Completed System</h2>
+<p>The upgraded system integrates autonomous Agentic AI with self-healing, multi-level summarization, closed-loop green refactoring, and interactive physics-based dependency visualization.</p>
+
+<table class="grid-table">
+    <thead>
+        <tr>
+            <th class="th-agent">Agentic AI Role</th>
+            <th class="th-arrow"></th>
+            <th class="th-main">Code & Optimization Pipeline</th>
+            <th class="th-arrow"></th>
+            <th class="th-support">Supporting Modules</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- ROW 1 -->
+        <tr>
+            <td class="box-agent">Understand code, inspect syntax, detect errors, and suggest/apply instant patches</td>
+            <td class="cell-arrow-h">&rarr;</td>
+            <td class="box-main">User pastes Python code<br><span style="font-size: 8.5pt; font-weight: normal; color: #475569;">(Input Code Ingestion)</span></td>
+            <td class="cell-arrow-h">&rarr;</td>
+            <td class="box-support">
+                <span class="tag-title">&bull; Self-Healing Code Agent</span>
+                <ul class="bullet-list">
+                    <li>Detect syntax & indentation errors</li>
+                    <li>Autonomously patch missing colons/quotes</li>
+                    <li>Provide instant error-recovery feedback</li>
+                </ul>
+            </td>
+        </tr>
+        <tr class="row-arrow-v">
+            <td>&darr;</td><td></td><td>&darr;</td><td></td><td>&darr;</td>
+        </tr>
+
+        <!-- ROW 2 -->
+        <tr>
+            <td class="box-agent">Check syntax grammar, inspect hierarchy, and extract structural code components</td>
+            <td class="cell-arrow-h">&rarr;</td>
+            <td class="box-main">AST Structural Analysis<br><span style="font-size: 8.5pt; font-weight: normal; color: #475569;">(Abstract Syntax Tree Extraction)</span></td>
+            <td class="cell-arrow-h">&rarr;</td>
+            <td class="box-support">
+                <span class="tag-title">&bull; Structural Dossier Generator</span>
+                <ul class="bullet-list">
+                    <li>Extract function signatures & arguments</li>
+                    <li>Track scope, returns, and variables</li>
+                    <li>Detect class & decorator patterns</li>
+                </ul>
+            </td>
+        </tr>
+        <tr class="row-arrow-v">
+            <td>&darr;</td><td></td><td>&darr;</td><td></td><td>&darr;</td>
+        </tr>
+
+        <!-- ROW 3 -->
+        <tr>
+            <td class="box-agent">Trace control & data flow paths, link variable definitions to usage nodes</td>
+            <td class="cell-arrow-h">&rarr;</td>
+            <td class="box-main">PDG Dependency Extraction<br><span style="font-size: 8.5pt; font-weight: normal; color: #475569;">(Program Dependence Graph)</span></td>
+            <td class="cell-arrow-h">&rarr;</td>
+            <td class="box-support">
+                <span class="tag-title">&bull; Physics-Based Dynamic PDG</span>
+                <ul class="bullet-list">
+                    <li>Interactive draggable nodes & elastic zoom</li>
+                    <li>Control vs. Data dependency coloring</li>
+                    <li>Live edge inspection on node click</li>
+                </ul>
+            </td>
+        </tr>
+        <tr class="row-arrow-v">
+            <td>&darr;</td><td></td><td>&darr;</td><td></td><td>&darr;</td>
+        </tr>
+
+        <!-- ROW 4 -->
+        <tr>
+            <td class="box-agent">Audit efficiency, evaluate loops, recursion, I/O calls, and calculate carbon footprint</td>
+            <td class="cell-arrow-h">&rarr;</td>
+            <td class="box-main">Green Computing Static Profiling<br><span style="font-size: 8.5pt; font-weight: normal; color: #475569;">(Complexity & Carbon Metrics)</span></td>
+            <td class="cell-arrow-h">&rarr;</td>
+            <td class="box-support">
+                <span class="tag-title">&bull; Green Software Engineering Profiler</span>
+                <ul class="bullet-list">
+                    <li>Compute Eco Score (0&ndash;100)</li>
+                    <li>Estimate energy (kWh) & CO2e emissions</li>
+                    <li>Identify nested loop & recursion bottlenecks</li>
+                </ul>
+            </td>
+        </tr>
+        <tr class="row-arrow-v">
+            <td>&darr;</td><td></td><td>&darr;</td><td></td><td>&darr;</td>
+        </tr>
+
+        <!-- ROW 5 -->
+        <tr>
+            <td class="box-agent">Synthesize comprehensive documentation tailored for different audiences</td>
+            <td class="cell-arrow-h">&rarr;</td>
+            <td class="box-main">Multi-Level Summarization<br><span style="font-size: 8.5pt; font-weight: normal; color: #475569;">(3-Tier Documentation Engine)</span></td>
+            <td class="cell-arrow-h">&rarr;</td>
+            <td class="box-support">
+                <span class="tag-title">&bull; Multi-Perspective Documentation</span>
+                <ul class="bullet-list">
+                    <li>Executive Summary for managers</li>
+                    <li>Technical Walkthrough for developers</li>
+                    <li>Auto-generated Google/Sphinx Docstrings</li>
+                </ul>
+            </td>
+        </tr>
+        <tr class="row-arrow-v">
+            <td>&darr;</td><td></td><td>&darr;</td><td></td><td>&darr;</td>
+        </tr>
+
+        <!-- ROW 6 -->
+        <tr>
+            <td class="box-agent">Formulate energy-saving plan, select optimization rules, rewrite inefficient code</td>
+            <td class="cell-arrow-h">&rarr;</td>
+            <td class="box-main">Autonomous Code Refactoring<br><span style="font-size: 8.5pt; font-weight: normal; color: #475569;">(Green Optimizer Agent)</span></td>
+            <td class="cell-arrow-h">&rarr;</td>
+            <td class="box-support">
+                <span class="tag-title">&bull; Green Code Optimizer</span>
+                <ul class="bullet-list">
+                    <li>Flatten nested loops into O(1) lookups</li>
+                    <li>Replace recursion with memoization</li>
+                    <li>Apply generator pipelines to save RAM</li>
+                </ul>
+            </td>
+        </tr>
+        <tr class="row-arrow-v">
+            <td>&darr;</td><td></td><td>&darr;</td><td></td><td>&darr;</td>
+        </tr>
+
+        <!-- ROW 7 -->
+        <tr>
+            <td class="box-agent">Validate syntax correctness, verify safety, and measure eco improvements</td>
+            <td class="cell-arrow-h">&rarr;</td>
+            <td class="box-main">Verification & Validation Loop<br><span style="font-size: 8.5pt; font-weight: normal; color: #475569;">(Self-Correction Engine)</span></td>
+            <td class="cell-arrow-h">&rarr;</td>
+            <td class="box-support">
+                <span class="tag-title">&bull; Closed-Loop Self-Correction</span>
+                <ul class="bullet-list">
+                    <li>If syntax error: reflect and re-optimize</li>
+                    <li>Verify Eco-Score improvement</li>
+                    <li>Certify green refactored code</li>
+                </ul>
+            </td>
+        </tr>
+        <tr class="row-arrow-v">
+            <td>&darr;</td><td></td><td>&darr;</td><td></td><td>&darr;</td>
+        </tr>
+
+        <!-- ROW 8 -->
+        <tr>
+            <td class="box-agent">Compare original vs optimized code, quantify energy saved, explain decisions</td>
+            <td class="cell-arrow-h">&rarr;</td>
+            <td class="box-main">Before vs. After Comparison<br><span style="font-size: 8.5pt; font-weight: normal; color: #475569;">(Diff Analysis & Classification)</span></td>
+            <td class="cell-arrow-h">&rarr;</td>
+            <td class="box-support">
+                <span class="tag-title">&bull; Optimization Regression & Savings</span>
+                <ul class="bullet-list">
+                    <li>Side-by-side code diff visualization</li>
+                    <li>Eco Score gain (e.g., 55 &rarr; 94/100)</li>
+                    <li>Quantified energy & CO2 reduction %</li>
+                </ul>
+            </td>
+        </tr>
+        <tr class="row-arrow-v">
+            <td>&darr;</td><td></td><td>&darr;</td><td></td><td>&darr;</td>
+        </tr>
+
+        <!-- ROW 9 -->
+        <tr>
+            <td class="box-agent">Coordinate multi-agent thought trace, render interactive views and analytics</td>
+            <td class="cell-arrow-h">&rarr;</td>
+            <td class="box-main">Display in Agentic Web Studio<br><span style="font-size: 8.5pt; font-weight: normal; color: #475569;">(Interactive Modern GUI)</span></td>
+            <td class="cell-arrow-h">&rarr;</td>
+            <td class="box-support">
+                <span class="tag-title">&bull; Real-Time Agentic Studio</span>
+                <ul class="bullet-list">
+                    <li>Live Agent Thought Trace log</li>
+                    <li>Observe &rarr; Analyze &rarr; Decide &rarr; Act stages</li>
+                    <li>Interactive Q&amp;A on code decisions</li>
+                </ul>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+</body>
+</html>

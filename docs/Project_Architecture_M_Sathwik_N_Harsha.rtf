@@ -1,0 +1,256 @@
+{\rtf1\ansi\ansicpg1252\deff0\nouicompat\deflang1033{\fonttbl{\f0\fnil\fcharset0 Calibri;}{\f1\fnil\fcharset0 Arial;}}
+{\colortbl ;\red30\green58\blue138;\red30\green64\blue175;\red15\green118\blue110;\red241\green245\blue249;\red238\green242\blue255;\red240\green249\blue255;\red236\green253\blue245;\red99\green102\blue241;\red2\green132\blue199;\red16\green185\blue129;\red59\green130\blue246;}
+\viewkind4\uc1 
+
+\pard\qc\b\fs36\cf1 PROJECT ARCHITECTURE & SYSTEM EVOLUTION\par
+\b0\fs22\cf0 Project Title: Code Summarization & Green Computing Using AST, PDG & Agentic AI\par
+Author / Student: M. SATHWIK AND N. HARSHA\par
+\par
+\pard\ql\cf0\fs21 This document is fully editable in \b WPS Office Writer\b0 . You can click into any table cell or box to edit, type, or format text directly.\par
+\par
+\b\fs26\cf2 PART 1: THE EXISTING SYSTEM ARCHITECTURE\par
+\b0\fs21\cf0 In simple terms, the existing system functions like a \b one-way conveyor belt\b0 . Code enters at the top, passes through three fixed extraction steps, and outputs a 1-sentence summary.\par
+\par
+
+\trowd\trgaph108\trleft1440\trqc
+\clbrdrt\brdrs\brdrw25\brdrcf11\clbrdrl\brdrs\brdrw25\brdrcf11\clbrdrb\brdrs\brdrw25\brdrcf11\clbrdrr\brdrs\brdrw25\brdrcf11\clcbpat4\cellx7200
+\pard\qc\intbl\b\fs21\cf0 User selects or pastes Python code\par\b0\fs18 (Benchmark program or sample code snippet)\cell\row
+\trowd\trgaph108\trleft1440\trqc\cellx7200\pard\qc\intbl\b\fs28\cf11\uc1\u8595?\cell\row
+
+\trowd\trgaph108\trleft1440\trqc
+\clbrdrt\brdrs\brdrw25\brdrcf11\clbrdrl\brdrs\brdrw25\brdrcf11\clbrdrb\brdrs\brdrw25\brdrcf11\clbrdrr\brdrs\brdrw25\brdrcf11\clcbpat4\cellx7200
+\pard\qc\intbl\b\fs21\cf0 Standard Python Parsing (ast.parse)\par\b0\fs18 (Parses source code into syntactic tree - Crashes on syntax typos)\cell\row
+\trowd\trgaph108\trleft1440\trqc\cellx7200\pard\qc\intbl\b\fs28\cf11\uc1\u8595?\cell\row
+
+\trowd\trgaph108\trleft1440\trqc
+\clbrdrt\brdrs\brdrw25\brdrcf11\clbrdrl\brdrs\brdrw25\brdrcf11\clbrdrb\brdrs\brdrw25\brdrcf11\clbrdrr\brdrs\brdrw25\brdrcf11\clcbpat4\cellx7200
+\pard\qc\intbl\b\fs21\cf0 Extract AST Structural Features (ast_extractor.py)\par\b0\fs18 (Extracts function names, arguments, loops, conditions, and classes)\cell\row
+\trowd\trgaph108\trleft1440\trqc\cellx7200\pard\qc\intbl\b\fs28\cf11\uc1\u8595?\cell\row
+
+\trowd\trgaph108\trleft1440\trqc
+\clbrdrt\brdrs\brdrw25\brdrcf11\clbrdrl\brdrs\brdrw25\brdrcf11\clbrdrb\brdrs\brdrw25\brdrcf11\clbrdrr\brdrs\brdrw25\brdrcf11\clcbpat4\cellx7200
+\pard\qc\intbl\b\fs21\cf0 Extract Program Dependence Graph (pdg_extractor.py)\par\b0\fs18 (Captures Control Dependencies and Data Flow Edges in plain text)\cell\row
+\trowd\trgaph108\trleft1440\trqc\cellx7200\pard\qc\intbl\b\fs28\cf11\uc1\u8595?\cell\row
+
+\trowd\trgaph108\trleft1440\trqc
+\clbrdrt\brdrs\brdrw25\brdrcf11\clbrdrl\brdrs\brdrw25\brdrcf11\clbrdrb\brdrs\brdrw25\brdrcf11\clbrdrr\brdrs\brdrw25\brdrcf11\clcbpat4\cellx7200
+\pard\qc\intbl\b\fs21\cf0 Measure Static Green Metrics (green_computing.py)\par\b0\fs18 (Counts loops, nesting depths, recursion - Computes baseline Eco Score)\cell\row
+\trowd\trgaph108\trleft1440\trqc\cellx7200\pard\qc\intbl\b\fs28\cf11\uc1\u8595?\cell\row
+
+\trowd\trgaph108\trleft1440\trqc
+\clbrdrt\brdrs\brdrw25\brdrcf11\clbrdrl\brdrs\brdrw25\brdrcf11\clbrdrb\brdrs\brdrw25\brdrcf11\clbrdrr\brdrs\brdrw25\brdrcf11\clcbpat4\cellx7200
+\pard\qc\intbl\b\fs21\cf0 Single-Shot LLM API Call (model_pipeline.py)\par\b0\fs18 (Assembles prompt with code + PDG text - Calls Groq / HuggingFace model)\cell\row
+\trowd\trgaph108\trleft1440\trqc\cellx7200\pard\qc\intbl\b\fs28\cf11\uc1\u8595?\cell\row
+
+\trowd\trgaph108\trleft1440\trqc
+\clbrdrt\brdrs\brdrw25\brdrcf11\clbrdrl\brdrs\brdrw25\brdrcf11\clbrdrb\brdrs\brdrw25\brdrcf11\clbrdrr\brdrs\brdrw25\brdrcf11\clcbpat4\cellx7200
+\pard\qc\intbl\b\fs21\cf0 Generate Single Summary Output\par\b0\fs18 (Produces a single 1-2 sentence English summary - Rule-based fallback if offline)\cell\row
+\trowd\trgaph108\trleft1440\trqc\cellx7200\pard\qc\intbl\b\fs28\cf11\uc1\u8595?\cell\row
+
+\trowd\trgaph108\trleft1440\trqc
+\clbrdrt\brdrs\brdrw25\brdrcf11\clbrdrl\brdrs\brdrw25\brdrcf11\clbrdrb\brdrs\brdrw25\brdrcf11\clbrdrr\brdrs\brdrw25\brdrcf11\clcbpat4\cellx7200
+\pard\qc\intbl\b\fs21\cf0 Display Results on Streamlit GUI (gui_app.py)\par\b0\fs18 (Displays text summary, static Graphviz PDG image, and baseline Eco-score)\cell\row
+
+\pard\ql\par
+\b\fs24\cf2 Existing Bottlenecks:\par
+\b0\fs21\cf0 1. \b Fragile:\b0  Unhandled syntax typos cause instant crashes.\par
+2. \b Passive:\b0  Single prompt without self-verification or error recovery.\par
+3. \b Diagnostic only:\b0  Flags inefficient loops but cannot rewrite or fix the code.\par
+4. \b Static UI:\b0  The dependency graph is a flat image without interactive movement.\par
+\par
+\page
+
+\b\fs26\cf2 PART 2: THE PROPOSED AGENTIC SYSTEM ARCHITECTURE\par
+\b0\fs21\cf0 Instead of a rigid script, the proposed architecture introduces an \b Autonomous Multi-Agent Team\b0  of 5 specialized digital workers.\par
+\par
+
+\trowd\trgaph108\trleft0\trqc
+\clcbpat1\cellx3100\cellx3500\clcbpat1\cellx6900\cellx7300\clcbpat3\cellx10400
+\pard\qc\intbl\b\fs20\cf0 AGENTIC AI ROLE\cell\pard\qc\intbl\cell\pard\qc\intbl\b\fs20\cf0 CODE & OPTIMIZATION PIPELINE\cell\pard\qc\intbl\cell\pard\qc\intbl\b\fs20\cf0 SUPPORTING MODULES\cell\row
+
+\trowd\trgaph108\trleft0\trqc
+\clbrdrt\brdrs\brdrw20\brdrcf8\clbrdrl\brdrs\brdrw20\brdrcf8\clbrdrb\brdrs\brdrw20\brdrcf8\clbrdrr\brdrs\brdrw20\brdrcf8\clcbpat5\cellx3100
+\cellx3500
+\clbrdrt\brdrs\brdrw20\brdrcf9\clbrdrl\brdrs\brdrw20\brdrcf9\clbrdrb\brdrs\brdrw20\brdrcf9\clbrdrr\brdrs\brdrw20\brdrcf9\clcbpat6\cellx6900
+\cellx7300
+\clbrdrt\brdrs\brdrw20\brdrcf10\clbrdrl\brdrs\brdrw20\brdrcf10\clbrdrb\brdrs\brdrw20\brdrcf10\clbrdrr\brdrs\brdrw20\brdrcf10\clcbpat7\cellx10400
+\pard\ql\intbl\fs19\cf0 Understand code, inspect syntax, detect errors, suggest/apply instant patches\cell
+\pard\qc\intbl\b\fs24\cf11\uc1\u8594?\cell
+\pard\qc\intbl\b\fs19\cf0 User pastes Python code\par\b0\fs17 (Input Ingestion)\cell
+\pard\qc\intbl\b\fs24\cf11\uc1\u8594?\cell
+\pard\ql\intbl\b\fs18\cf3 Self-Healing Code Agent\par\b0\fs17 - Detect syntax/indent errors\par - Autonomously patch missing tokens\par - Provide recovery alert\cell\row
+
+\trowd\trgaph108\trleft0\trqc\cellx3100\cellx3500\cellx6900\cellx7300\cellx10400
+\pard\qc\intbl\b\fs22\cf8\uc1\u8595?\cell\pard\qc\intbl\cell\pard\qc\intbl\b\fs22\cf9\uc1\u8595?\cell\pard\qc\intbl\cell\pard\qc\intbl\b\fs22\cf10\uc1\u8595?\cell\row
+
+\trowd\trgaph108\trleft0\trqc
+\clbrdrt\brdrs\brdrw20\brdrcf8\clbrdrl\brdrs\brdrw20\brdrcf8\clbrdrb\brdrs\brdrw20\brdrcf8\clbrdrr\brdrs\brdrw20\brdrcf8\clcbpat5\cellx3100
+\cellx3500
+\clbrdrt\brdrs\brdrw20\brdrcf9\clbrdrl\brdrs\brdrw20\brdrcf9\clbrdrb\brdrs\brdrw20\brdrcf9\clbrdrr\brdrs\brdrw20\brdrcf9\clcbpat6\cellx6900
+\cellx7300
+\clbrdrt\brdrs\brdrw20\brdrcf10\clbrdrl\brdrs\brdrw20\brdrcf10\clbrdrb\brdrs\brdrw20\brdrcf10\clbrdrr\brdrs\brdrw20\brdrcf10\clcbpat7\cellx10400
+\pard\ql\intbl\fs19\cf0 Check syntax grammar, inspect hierarchy, extract structural code components\cell
+\pard\qc\intbl\b\fs24\cf11\uc1\u8594?\cell
+\pard\qc\intbl\b\fs19\cf0 AST Structural Analysis\par\b0\fs17 (Abstract Syntax Tree)\cell
+\pard\qc\intbl\b\fs24\cf11\uc1\u8594?\cell
+\pard\ql\intbl\b\fs18\cf3 Structural Dossier Generator\par\b0\fs17 - Function signatures & args\par - Scope, returns, variables\par - Class/decorator patterns\cell\row
+
+\trowd\trgaph108\trleft0\trqc\cellx3100\cellx3500\cellx6900\cellx7300\cellx10400
+\pard\qc\intbl\b\fs22\cf8\uc1\u8595?\cell\pard\qc\intbl\cell\pard\qc\intbl\b\fs22\cf9\uc1\u8595?\cell\pard\qc\intbl\cell\pard\qc\intbl\b\fs22\cf10\uc1\u8595?\cell\row
+
+\trowd\trgaph108\trleft0\trqc
+\clbrdrt\brdrs\brdrw20\brdrcf8\clbrdrl\brdrs\brdrw20\brdrcf8\clbrdrb\brdrs\brdrw20\brdrcf8\clbrdrr\brdrs\brdrw20\brdrcf8\clcbpat5\cellx3100
+\cellx3500
+\clbrdrt\brdrs\brdrw20\brdrcf9\clbrdrl\brdrs\brdrw20\brdrcf9\clbrdrb\brdrs\brdrw20\brdrcf9\clbrdrr\brdrs\brdrw20\brdrcf9\clcbpat6\cellx6900
+\cellx7300
+\clbrdrt\brdrs\brdrw20\brdrcf10\clbrdrl\brdrs\brdrw20\brdrcf10\clbrdrb\brdrs\brdrw20\brdrcf10\clbrdrr\brdrs\brdrw20\brdrcf10\clcbpat7\cellx10400
+\pard\ql\intbl\fs19\cf0 Trace control & data flow paths, link variable definitions to usage nodes\cell
+\pard\qc\intbl\b\fs24\cf11\uc1\u8594?\cell
+\pard\qc\intbl\b\fs19\cf0 PDG Dependency Extraction\par\b0\fs17 (Program Dependence Graph)\cell
+\pard\qc\intbl\b\fs24\cf11\uc1\u8594?\cell
+\pard\ql\intbl\b\fs18\cf3 Physics-Based Dynamic PDG\par\b0\fs17 - Interactive draggable nodes\par - Control vs Data coloring\par - Live edge inspection\cell\row
+
+\trowd\trgaph108\trleft0\trqc\cellx3100\cellx3500\cellx6900\cellx7300\cellx10400
+\pard\qc\intbl\b\fs22\cf8\uc1\u8595?\cell\pard\qc\intbl\cell\pard\qc\intbl\b\fs22\cf9\uc1\u8595?\cell\pard\qc\intbl\cell\pard\qc\intbl\b\fs22\cf10\uc1\u8595?\cell\row
+
+\trowd\trgaph108\trleft0\trqc
+\clbrdrt\brdrs\brdrw20\brdrcf8\clbrdrl\brdrs\brdrw20\brdrcf8\clbrdrb\brdrs\brdrw20\brdrcf8\clbrdrr\brdrs\brdrw20\brdrcf8\clcbpat5\cellx3100
+\cellx3500
+\clbrdrt\brdrs\brdrw20\brdrcf9\clbrdrl\brdrs\brdrw20\brdrcf9\clbrdrb\brdrs\brdrw20\brdrcf9\clbrdrr\brdrs\brdrw20\brdrcf9\clcbpat6\cellx6900
+\cellx7300
+\clbrdrt\brdrs\brdrw20\brdrcf10\clbrdrl\brdrs\brdrw20\brdrcf10\clbrdrb\brdrs\brdrw20\brdrcf10\clbrdrr\brdrs\brdrw20\brdrcf10\clcbpat7\cellx10400
+\pard\ql\intbl\fs19\cf0 Audit efficiency, evaluate loops, recursion, I/O calls, compute carbon footprint\cell
+\pard\qc\intbl\b\fs24\cf11\uc1\u8594?\cell
+\pard\qc\intbl\b\fs19\cf0 Green Computing Profiling\par\b0\fs17 (Complexity & Carbon)\cell
+\pard\qc\intbl\b\fs24\cf11\uc1\u8594?\cell
+\pard\ql\intbl\b\fs18\cf3 Green Engineering Profiler\par\b0\fs17 - Compute Eco Score (0-100)\par - Estimate energy kWh & CO2\par - Flag nested loop bottlenecks\cell\row
+
+\trowd\trgaph108\trleft0\trqc\cellx3100\cellx3500\cellx6900\cellx7300\cellx10400
+\pard\qc\intbl\b\fs22\cf8\uc1\u8595?\cell\pard\qc\intbl\cell\pard\qc\intbl\b\fs22\cf9\uc1\u8595?\cell\pard\qc\intbl\cell\pard\qc\intbl\b\fs22\cf10\uc1\u8595?\cell\row
+
+\trowd\trgaph108\trleft0\trqc
+\clbrdrt\brdrs\brdrw20\brdrcf8\clbrdrl\brdrs\brdrw20\brdrcf8\clbrdrb\brdrs\brdrw20\brdrcf8\clbrdrr\brdrs\brdrw20\brdrcf8\clcbpat5\cellx3100
+\cellx3500
+\clbrdrt\brdrs\brdrw20\brdrcf9\clbrdrl\brdrs\brdrw20\brdrcf9\clbrdrb\brdrs\brdrw20\brdrcf9\clbrdrr\brdrs\brdrw20\brdrcf9\clcbpat6\cellx6900
+\cellx7300
+\clbrdrt\brdrs\brdrw20\brdrcf10\clbrdrl\brdrs\brdrw20\brdrcf10\clbrdrb\brdrs\brdrw20\brdrcf10\clbrdrr\brdrs\brdrw20\brdrcf10\clcbpat7\cellx10400
+\pard\ql\intbl\fs19\cf0 Synthesize comprehensive documentation tailored for different audiences\cell
+\pard\qc\intbl\b\fs24\cf11\uc1\u8594?\cell
+\pard\qc\intbl\b\fs19\cf0 Multi-Level Summarization\par\b0\fs17 (3-Tier Documentation)\cell
+\pard\qc\intbl\b\fs24\cf11\uc1\u8594?\cell
+\pard\ql\intbl\b\fs18\cf3 Multi-Perspective Suite\par\b0\fs17 - Executive Summary (Managers)\par - Technical Walkthrough (Devs)\par - Auto Google/Sphinx Docstrings\cell\row
+
+\trowd\trgaph108\trleft0\trqc\cellx3100\cellx3500\cellx6900\cellx7300\cellx10400
+\pard\qc\intbl\b\fs22\cf8\uc1\u8595?\cell\pard\qc\intbl\cell\pard\qc\intbl\b\fs22\cf9\uc1\u8595?\cell\pard\qc\intbl\cell\pard\qc\intbl\b\fs22\cf10\uc1\u8595?\cell\row
+
+\trowd\trgaph108\trleft0\trqc
+\clbrdrt\brdrs\brdrw20\brdrcf8\clbrdrl\brdrs\brdrw20\brdrcf8\clbrdrb\brdrs\brdrw20\brdrcf8\clbrdrr\brdrs\brdrw20\brdrcf8\clcbpat5\cellx3100
+\cellx3500
+\clbrdrt\brdrs\brdrw20\brdrcf9\clbrdrl\brdrs\brdrw20\brdrcf9\clbrdrb\brdrs\brdrw20\brdrcf9\clbrdrr\brdrs\brdrw20\brdrcf9\clcbpat6\cellx6900
+\cellx7300
+\clbrdrt\brdrs\brdrw20\brdrcf10\clbrdrl\brdrs\brdrw20\brdrcf10\clbrdrb\brdrs\brdrw20\brdrcf10\clbrdrr\brdrs\brdrw20\brdrcf10\clcbpat7\cellx10400
+\pard\ql\intbl\fs19\cf0 Formulate energy-saving plan, select optimization rules, rewrite code\cell
+\pard\qc\intbl\b\fs24\cf11\uc1\u8594?\cell
+\pard\qc\intbl\b\fs19\cf0 Autonomous Code Refactoring\par\b0\fs17 (Green Optimizer Agent)\cell
+\pard\qc\intbl\b\fs24\cf11\uc1\u8594?\cell
+\pard\ql\intbl\b\fs18\cf3 Green Code Optimizer\par\b0\fs17 - Flatten loops to O(1) lookups\par - Memoize recursion\par - Generator memory pipelines\cell\row
+
+\trowd\trgaph108\trleft0\trqc\cellx3100\cellx3500\cellx6900\cellx7300\cellx10400
+\pard\qc\intbl\b\fs22\cf8\uc1\u8595?\cell\pard\qc\intbl\cell\pard\qc\intbl\b\fs22\cf9\uc1\u8595?\cell\pard\qc\intbl\cell\pard\qc\intbl\b\fs22\cf10\uc1\u8595?\cell\row
+
+\trowd\trgaph108\trleft0\trqc
+\clbrdrt\brdrs\brdrw20\brdrcf8\clbrdrl\brdrs\brdrw20\brdrcf8\clbrdrb\brdrs\brdrw20\brdrcf8\clbrdrr\brdrs\brdrw20\brdrcf8\clcbpat5\cellx3100
+\cellx3500
+\clbrdrt\brdrs\brdrw20\brdrcf9\clbrdrl\brdrs\brdrw20\brdrcf9\clbrdrb\brdrs\brdrw20\brdrcf9\clbrdrr\brdrs\brdrw20\brdrcf9\clcbpat6\cellx6900
+\cellx7300
+\clbrdrt\brdrs\brdrw20\brdrcf10\clbrdrl\brdrs\brdrw20\brdrcf10\clbrdrb\brdrs\brdrw20\brdrcf10\clbrdrr\brdrs\brdrw20\brdrcf10\clcbpat7\cellx10400
+\pard\ql\intbl\fs19\cf0 Validate syntax correctness, verify safety, measure eco improvements\cell
+\pard\qc\intbl\b\fs24\cf11\uc1\u8594?\cell
+\pard\qc\intbl\b\fs19\cf0 Verification & Validation\par\b0\fs17 (Self-Correction Loop)\cell
+\pard\qc\intbl\b\fs24\cf11\uc1\u8594?\cell
+\pard\ql\intbl\b\fs18\cf3 Closed-Loop Self-Correction\par\b0\fs17 - If syntax error: re-optimize\par - Verify Eco Score increase\par - Certify green code\cell\row
+
+\trowd\trgaph108\trleft0\trqc\cellx3100\cellx3500\cellx6900\cellx7300\cellx10400
+\pard\qc\intbl\b\fs22\cf8\uc1\u8595?\cell\pard\qc\intbl\cell\pard\qc\intbl\b\fs22\cf9\uc1\u8595?\cell\pard\qc\intbl\cell\pard\qc\intbl\b\fs22\cf10\uc1\u8595?\cell\row
+
+\trowd\trgaph108\trleft0\trqc
+\clbrdrt\brdrs\brdrw20\brdrcf8\clbrdrl\brdrs\brdrw20\brdrcf8\clbrdrb\brdrs\brdrw20\brdrcf8\clbrdrr\brdrs\brdrw20\brdrcf8\clcbpat5\cellx3100
+\cellx3500
+\clbrdrt\brdrs\brdrw20\brdrcf9\clbrdrl\brdrs\brdrw20\brdrcf9\clbrdrb\brdrs\brdrw20\brdrcf9\clbrdrr\brdrs\brdrw20\brdrcf9\clcbpat6\cellx6900
+\cellx7300
+\clbrdrt\brdrs\brdrw20\brdrcf10\clbrdrl\brdrs\brdrw20\brdrcf10\clbrdrb\brdrs\brdrw20\brdrcf10\clbrdrr\brdrs\brdrw20\brdrcf10\clcbpat7\cellx10400
+\pard\ql\intbl\fs19\cf0 Compare original vs optimized code, quantify energy saved, explain decisions\cell
+\pard\qc\intbl\b\fs24\cf11\uc1\u8594?\cell
+\pard\qc\intbl\b\fs19\cf0 Before vs. After Comparison\par\b0\fs17 (Diff & Classification)\cell
+\pard\qc\intbl\b\fs24\cf11\uc1\u8594?\cell
+\pard\ql\intbl\b\fs18\cf3 Optimization Regression & Savings\par\b0\fs17 - Side-by-side code diff\par - Eco Score jump (55 to 94)\par - Energy reduction percentage\cell\row
+
+\trowd\trgaph108\trleft0\trqc\cellx3100\cellx3500\cellx6900\cellx7300\cellx10400
+\pard\qc\intbl\b\fs22\cf8\uc1\u8595?\cell\pard\qc\intbl\cell\pard\qc\intbl\b\fs22\cf9\uc1\u8595?\cell\pard\qc\intbl\cell\pard\qc\intbl\b\fs22\cf10\uc1\u8595?\cell\row
+
+\trowd\trgaph108\trleft0\trqc
+\clbrdrt\brdrs\brdrw20\brdrcf8\clbrdrl\brdrs\brdrw20\brdrcf8\clbrdrb\brdrs\brdrw20\brdrcf8\clbrdrr\brdrs\brdrw20\brdrcf8\clcbpat5\cellx3100
+\cellx3500
+\clbrdrt\brdrs\brdrw20\brdrcf9\clbrdrl\brdrs\brdrw20\brdrcf9\clbrdrb\brdrs\brdrw20\brdrcf9\clbrdrr\brdrs\brdrw20\brdrcf9\clcbpat6\cellx6900
+\cellx7300
+\clbrdrt\brdrs\brdrw20\brdrcf10\clbrdrl\brdrs\brdrw20\brdrcf10\clbrdrb\brdrs\brdrw20\brdrcf10\clbrdrr\brdrs\brdrw20\brdrcf10\clcbpat7\cellx10400
+\pard\ql\intbl\fs19\cf0 Coordinate multi-agent thought trace, render interactive views and analytics\cell
+\pard\qc\intbl\b\fs24\cf11\uc1\u8594?\cell
+\pard\qc\intbl\b\fs19\cf0 Display in Web Studio\par\b0\fs17 (Interactive GUI)\cell
+\pard\qc\intbl\b\fs24\cf11\uc1\u8594?\cell
+\pard\ql\intbl\b\fs18\cf3 Real-Time Agentic Studio\par\b0\fs17 - Live Agent Thought Trace log\par - Observe-Analyze-Decide-Act\par - Interactive Q&A\cell\row
+
+\pard\par
+\b\fs24\cf2 Meet the 5 Specialized AI Agents:\par
+\b0\fs20\cf0\par
+\b Agent 0: The Self-Healing Agent (Error Recovery Specialist)\b0\par
+Analogy: An automatic spell-checker in Microsoft Word that instantly fixes typos.\par
+Job: If a user forgets a colon or has bad indentation, this agent diagnoses the line, patches the code autonomously, and alerts the user.\par
+\par
+\b Agent 1: The Structural Inspector (AST & PDG Detective)\b0\par
+Analogy: A building architect examining the structural blueprint before renovation.\par
+Job: Extracts the AST tree and builds a complete map of control and data dependencies (who passes what to whom).\par
+\par
+\b Agent 2: The Green Computing Auditor (Energy Inspector)\b0\par
+Analogy: An Energy Star appliance inspector checking power consumption.\par
+Job: Evaluates code against software sustainability metrics, checks nested loop depth, and assigns a baseline Eco Score (e.g., 55/100).\par
+\par
+\b Agent 3: The Multi-Level Summarizer (Technical Communicator)\b0\par
+Analogy: A skilled journalist who can write a 1-sentence headline, a detailed article, or a manual.\par
+Job: Generates an Executive Summary, a Developer Walkthrough, and ready-to-copy Google/Sphinx Docstrings.\par
+\par
+\b Agent 4: The Autonomous Green Optimizer & Verifier (Senior Refactorer)\b0\par
+Analogy: An expert mechanic who tunes the engine, takes it on a test lap, and proves it uses 50% less gas.\par
+Job: Rewrites code to be green, tests it in a self-correction loop, and displays verified energy savings (e.g., 55 to 94/100).\par
+\par
+\page
+\b\fs26\cf2 PART 3: FEATURE-BY-FEATURE COMPARISON TABLE\par
+\b0\fs20\cf0\par
+
+\trowd\trgaph108\trleft0\trqc
+\clcbpat1\cellx2600\clcbpat1\cellx6500\clcbpat1\cellx10400
+\pard\qc\intbl\b\fs20\cf0 FEATURE DIMENSION\cell\pard\qc\intbl\b\fs20\cf0 EXISTING BASELINE\cell\pard\qc\intbl\b\fs20\cf0 PROPOSED AGENTIC SYSTEM\cell\row
+
+\trowd\trgaph108\trleft0\trqc\cellx2600\cellx6500\cellx10400
+\pard\ql\intbl\b\fs19\cf0 System Nature\cell\pard\ql\intbl\fs19\cf0 Linear script (one-way pipeline without feedback loops)\cell\pard\ql\intbl\fs19\cf0 Autonomous multi-agent system with collaboration & self-correction\cell\row
+
+\trowd\trgaph108\trleft0\trqc\cellx2600\cellx6500\cellx10400
+\pard\ql\intbl\b\fs19\cf0 Typo / Error Handling\cell\pard\ql\intbl\fs19\cf0 Crashes immediately on missing colons, quotes, or indents\cell\pard\ql\intbl\fs19\cf0 Self-Healing Agent diagnoses & patches code autonomously\cell\row
+
+\trowd\trgaph108\trleft0\trqc\cellx2600\cellx6500\cellx10400
+\pard\ql\intbl\b\fs19\cf0 Summarization Output\cell\pard\ql\intbl\fs19\cf0 Single fixed 1-2 sentence string\cell\pard\ql\intbl\fs19\cf0 3-Tier Suite: Executive, Developer Walkthrough, & Docstrings\cell\row
+
+\trowd\trgaph108\trleft0\trqc\cellx2600\cellx6500\cellx10400
+\pard\ql\intbl\b\fs19\cf0 Green Computing Action\cell\pard\ql\intbl\fs19\cf0 Diagnostic only (reports low score and static tips)\cell\pard\ql\intbl\fs19\cf0 Active Refactoring: rewrites code & verifies energy saved\cell\row
+
+\trowd\trgaph108\trleft0\trqc\cellx2600\cellx6500\cellx10400
+\pard\ql\intbl\b\fs19\cf0 Verification Mechanism\cell\pard\ql\intbl\fs19\cf0 None (assumes output is correct)\cell\pard\ql\intbl\fs19\cf0 Closed Verification Loop: tests syntax & confirms Eco Score gain\cell\row
+
+\trowd\trgaph108\trleft0\trqc\cellx2600\cellx6500\cellx10400
+\pard\ql\intbl\b\fs19\cf0 Dependency Graph (PDG)\cell\pard\ql\intbl\fs19\cf0 Static, flat Graphviz circles with no movement\cell\pard\ql\intbl\fs19\cf0 Physics-Based Dynamic PDG: nodes float, drag, and zoom\cell\row
+
+\trowd\trgaph108\trleft0\trqc\cellx2600\cellx6500\cellx10400
+\pard\ql\intbl\b\fs19\cf0 User Experience\cell\pard\ql\intbl\fs19\cf0 Basic text boxes & standard bar charts\cell\pard\ql\intbl\fs19\cf0 Modern Studio with live Thought Trace & side-by-side code diff\cell\row
+
+\pard\par
+}
