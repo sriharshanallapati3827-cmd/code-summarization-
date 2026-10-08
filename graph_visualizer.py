@@ -1,16 +1,16 @@
 """
-graph_visualizer.py - Physics-Based Interactive PDG Graph Visualizer
-===================================================================
-Renders an interactive, physics-driven Program Dependence Graph (PDG)
-using vis.js Network.
+graph_visualizer.py - Static & High-Contrast PDG Graph Visualizer
+=================================================================
+Renders a clean, attractive, and completely static Program Dependence Graph (PDG)
+using vis.js Network with hierarchical directed tree layout.
 
 Features:
-  - Interactive physics canvas (drag, bounce, zoom, pan)
-  - Color-coded node typology (Root, Function, Branch, Assign, Return, Tainted)
-  - Color-coded edge semantics (Control flow, Data dependencies, Taint tracking)
-  - Interactive inspector: clicking any node reveals incoming/outgoing dependencies
-  - View controls: toggle Control edges, Data edges, or isolate Tainted pathways
-  - Generates embeddable HTML string for Streamlit or standalone .html file
+  - 100% Static: Physics disabled by default (no bouncing, shaking, or drifting)
+  - Attractive Modern UI: Glassmorphism toolbar, high-contrast dark theme, and glowing accents
+  - Clear Node Typology: Function, Branch (If/For), Statement, Return, and Tainted Sinks
+  - Dual Edge Semantics: Control Flow (dashed cyan) vs. Data Dependency (solid emerald)
+  - Taint Isolation: Highlights critical vulnerable paths in glowing crimson red
+  - Interactive Inspector: Click any node to inspect incoming and outgoing dependencies
 """
 
 import json
@@ -21,21 +21,20 @@ def generate_pdg_html(
     pdg_graph: Dict[str, Any],
     tainted_flows: Optional[List[Dict[str, Any]]] = None,
     height: str = "550px",
-    background: str = "#0f172a"
+    background: str = "#0b0f19"
 ) -> str:
     """
-    Generates a full interactive HTML snippet rendering the PDG with vis.js physics.
+    Generates a full interactive HTML snippet rendering the PDG statically with vis.js.
     """
     if tainted_flows is None:
         tainted_flows = []
 
-    # Map tainted node IDs
+    # Map tainted node IDs and edge pairs
     tainted_node_ids = set()
     tainted_edge_pairs = set()
     for flow in tainted_flows:
         src = flow.get("source_node")
         tgt = flow.get("sink_node")
-        var = flow.get("variable")
         if src:
             tainted_node_ids.add(src)
         if tgt:
@@ -50,52 +49,80 @@ def generate_pdg_html(
     for node_id, label in raw_nodes.items():
         is_tainted = node_id in tainted_node_ids
         clean_label = label.replace("\n", " ").strip()
-        
+
         # Categorize node style
         if is_tainted:
-            color = {"background": "#dc2626", "border": "#ef4444", "highlight": {"background": "#b91c1c", "border": "#f87171"}}
-            shape = "box"
-            font = {"color": "#ffffff", "face": "monospace", "bold": True}
-            title = f"CRITICAL: Tainted Node {node_id}\n{clean_label}"
+            color = {
+                "background": "#7f1d1d",
+                "border": "#ef4444",
+                "highlight": {"background": "#991b1b", "border": "#f87171"}
+            }
+            font = {"color": "#fee2e2", "face": "system-ui, -apple-system, sans-serif", "size": 12, "bold": True}
+            title = f"🚨 CRITICAL TAINTED SINK: {node_id}\n{clean_label}"
+            badge = "⚠️ TAINTED"
         elif node_id == "root":
-            color = {"background": "#334155", "border": "#64748b", "highlight": {"background": "#475569", "border": "#94a3b8"}}
-            shape = "hexagon"
-            font = {"color": "#f8fafc", "face": "monospace"}
-            title = "Program Entry Root"
+            color = {
+                "background": "#1e293b",
+                "border": "#38bdf8",
+                "highlight": {"background": "#334155", "border": "#7dd3fc"}
+            }
+            font = {"color": "#e2e8f0", "face": "system-ui, -apple-system, sans-serif", "size": 12, "bold": True}
+            title = "Program Entry Root Node"
+            badge = "ROOT"
         elif clean_label.startswith("Function"):
-            color = {"background": "#2563eb", "border": "#3b82f6", "highlight": {"background": "#1d4ed8", "border": "#60a5fa"}}
-            shape = "box"
-            font = {"color": "#ffffff", "face": "monospace", "bold": True}
-            title = f"Function Definition: {clean_label}"
+            color = {
+                "background": "#312e81",
+                "border": "#6366f1",
+                "highlight": {"background": "#3730a3", "border": "#818cf8"}
+            }
+            font = {"color": "#e0e7ff", "face": "system-ui, -apple-system, sans-serif", "size": 12, "bold": True}
+            title = f"Function Declaration: {clean_label}"
+            badge = "FUNC"
         elif clean_label.startswith("If") or clean_label.startswith("For") or clean_label.startswith("While"):
-            color = {"background": "#d97706", "border": "#f59e0b", "highlight": {"background": "#b45309", "border": "#fbbf24"}}
-            shape = "diamond"
-            font = {"color": "#ffffff", "face": "monospace"}
+            color = {
+                "background": "#78350f",
+                "border": "#f59e0b",
+                "highlight": {"background": "#92400e", "border": "#fbbf24"}
+            }
+            font = {"color": "#fef3c7", "face": "system-ui, -apple-system, sans-serif", "size": 12, "bold": True}
             title = f"Control Decision Branch: {clean_label}"
+            badge = "BRANCH"
         elif clean_label.startswith("Return"):
-            color = {"background": "#7c3aed", "border": "#8b5cf6", "highlight": {"background": "#6d28d9", "border": "#a78bfa"}}
-            shape = "box"
-            font = {"color": "#ffffff", "face": "monospace"}
+            color = {
+                "background": "#581c87",
+                "border": "#a855f7",
+                "highlight": {"background": "#6b21a8", "border": "#c084fc"}
+            }
+            font = {"color": "#f3e8ff", "face": "system-ui, -apple-system, sans-serif", "size": 12, "bold": True}
             title = f"Return Statement: {clean_label}"
+            badge = "RETURN"
         else:
-            # Assign / Expr
-            color = {"background": "#059669", "border": "#10b981", "highlight": {"background": "#047857", "border": "#34d399"}}
-            shape = "box"
-            font = {"color": "#ffffff", "face": "monospace"}
+            # Statement / Assign
+            color = {
+                "background": "#064e3b",
+                "border": "#10b981",
+                "highlight": {"background": "#065f46", "border": "#34d399"}
+            }
+            font = {"color": "#d1fae5", "face": "system-ui, -apple-system, sans-serif", "size": 12, "bold": False}
             title = f"Statement: {clean_label}"
+            badge = "STMT"
 
-        # Shorten label for node display
-        display_label = f"{node_id}\n{clean_label[:28]}..." if len(clean_label) > 28 else f"{node_id}\n{clean_label}"
+        # Formatted display label
+        truncated = clean_label[:26] + "..." if len(clean_label) > 26 else clean_label
+        display_label = f"[{badge}] {node_id}\n{truncated}"
 
         vis_nodes.append({
             "id": node_id,
             "label": display_label,
             "title": title,
-            "shape": shape,
+            "shape": "box",
+            "shapeProperties": {"borderRadius": 8},
             "color": color,
+            "borderWidth": 2,
+            "borderWidthSelected": 3,
             "font": font,
-            "margin": 10,
-            "shadow": {"enabled": True, "color": "rgba(0,0,0,0.5)", "size": 6}
+            "margin": {"top": 8, "bottom": 8, "left": 12, "right": 12},
+            "shadow": {"enabled": True, "color": "rgba(0,0,0,0.45)", "size": 8, "x": 1, "y": 2}
         })
 
     vis_edges = []
@@ -110,17 +137,17 @@ def generate_pdg_html(
             color = {"color": "#ef4444", "highlight": "#dc2626"}
             width = 3.5
             dashes = False
-            title = f"TAINT ALERT: Insecure data flow of '{lbl}'"
+            title = f"🚨 TAINT PATHWAY: Untrusted variable '{lbl}' flows into sensitive sink"
             edge_lbl = f"⚠ {lbl}"
         elif kind == "Control":
             color = {"color": "#38bdf8", "highlight": "#0ea5e9"}
             width = 1.8
             dashes = [5, 5]
-            title = f"Control Flow: {src} -> {tgt}"
+            title = f"Control Dependency: {src} -> {tgt}"
             edge_lbl = ""
         else:
             # Data flow
-            color = {"color": "#4ade80", "highlight": "#22c55e"}
+            color = {"color": "#34d399", "highlight": "#10b981"}
             width = 2.0
             dashes = False
             title = f"Data Dependency: {src} -> {tgt} ('{lbl}')"
@@ -137,9 +164,9 @@ def generate_pdg_html(
             "color": color,
             "width": width,
             "dashes": dashes,
-            "arrows": "to",
-            "smooth": {"type": "cubicBezier", "roundness": 0.3},
-            "font": {"color": "#cbd5e1", "size": 11, "face": "monospace", "align": "horizontal", "strokeWidth": 0}
+            "arrows": {"to": {"enabled": True, "scaleFactor": 0.8}},
+            "smooth": {"type": "cubicBezier", "roundness": 0.2},
+            "font": {"color": "#94a3b8", "size": 11, "face": "system-ui, sans-serif", "align": "horizontal", "strokeWidth": 0}
         })
 
     nodes_json = json.dumps(vis_nodes)
@@ -155,8 +182,8 @@ def generate_pdg_html(
     body {{
       margin: 0;
       padding: 0;
-      background-color: {background};
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: radial-gradient(ellipse at 50% 20%, #1e293b 0%, #0f172a 50%, #020617 100%);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
       color: #e2e8f0;
       overflow: hidden;
     }}
@@ -167,42 +194,82 @@ def generate_pdg_html(
     }}
     .pdg-toolbar {{
       position: absolute;
-      top: 10px;
-      left: 10px;
+      top: 12px;
+      left: 14px;
       z-index: 100;
-      background: rgba(15, 23, 42, 0.85);
-      backdrop-filter: blur(8px);
-      padding: 8px 14px;
-      border-radius: 8px;
-      border: 1px solid #334155;
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(10px);
+      padding: 8px 16px;
+      border-radius: 10px;
+      border: 1px solid rgba(51, 65, 85, 0.8);
       display: flex;
-      gap: 12px;
+      gap: 14px;
       align-items: center;
       font-size: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+    }}
+    .status-badge {{
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 11px;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
     }}
     .pdg-toolbar label {{
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
       cursor: pointer;
       user-select: none;
+      color: #cbd5e1;
+    }}
+    .pdg-toolbar label:hover {{
+      color: #ffffff;
+    }}
+    .btn-action {{
+      background: #1e293b;
+      color: #e2e8f0;
+      border: 1px solid #475569;
+      padding: 4px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }}
+    .btn-action:hover {{
+      background: #334155;
+      color: #38bdf8;
+      border-color: #38bdf8;
     }}
     .legend {{
       position: absolute;
       bottom: 12px;
-      right: 12px;
+      right: 14px;
       z-index: 100;
-      background: rgba(15, 23, 42, 0.85);
-      backdrop-filter: blur(8px);
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(10px);
       padding: 10px 14px;
-      border-radius: 8px;
-      border: 1px solid #334155;
+      border-radius: 10px;
+      border: 1px solid rgba(51, 65, 85, 0.8);
       font-size: 11px;
       display: flex;
       flex-direction: column;
       gap: 6px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+    }}
+    .legend-title {{
+      font-weight: 700;
+      color: #94a3b8;
+      margin-bottom: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-size: 10px;
     }}
     .legend-item {{
       display: flex;
@@ -212,7 +279,7 @@ def generate_pdg_html(
     .dot {{
       width: 10px;
       height: 10px;
-      border-radius: 50%;
+      border-radius: 3px;
       display: inline-block;
     }}
     .line-dash {{
@@ -224,7 +291,7 @@ def generate_pdg_html(
     .line-solid {{
       width: 16px;
       height: 2px;
-      background: #4ade80;
+      background: #34d399;
       display: inline-block;
     }}
     .line-taint {{
@@ -235,41 +302,44 @@ def generate_pdg_html(
     }}
     #node-details {{
       position: absolute;
-      top: 10px;
-      right: 10px;
+      top: 12px;
+      right: 14px;
       z-index: 100;
-      background: rgba(15, 23, 42, 0.9);
-      backdrop-filter: blur(8px);
-      padding: 10px 14px;
-      border-radius: 8px;
-      border: 1px solid #3b82f6;
+      background: rgba(15, 23, 42, 0.94);
+      backdrop-filter: blur(10px);
+      padding: 12px 16px;
+      border-radius: 10px;
+      border: 1px solid #38bdf8;
       font-size: 12px;
       display: none;
-      max-width: 280px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      max-width: 320px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
     }}
   </style>
 </head>
 <body>
   <div id="pdg-container">
     <div class="pdg-toolbar">
-      <span style="font-weight: 600; color: #38bdf8;">PDG Physics Visualizer</span>
+      <span class="status-badge">🔒 Static PDG (Fixed)</span>
       <label><input type="checkbox" id="toggle-control" checked /> Control Edges</label>
       <label><input type="checkbox" id="toggle-data" checked /> Data Edges</label>
       <label><input type="checkbox" id="toggle-taint-only" /> Only Tainted</label>
-      <button onclick="network.fit({{animation: true}})" style="background: #1e293b; color: #e2e8f0; border: 1px solid #475569; padding: 3px 8px; border-radius: 4px; cursor: pointer; font-size: 11px;">Reset View</button>
+      <button class="btn-action" onclick="network.fit({{animation: {{duration: 400}}}})">Center & Fit</button>
     </div>
 
     <div id="node-details"></div>
 
     <div class="legend">
-      <div style="font-weight: 600; color: #94a3b8; margin-bottom: 2px;">PDG Semantics</div>
-      <div class="legend-item"><span class="dot" style="background:#2563eb;"></span> Function Def</div>
-      <div class="legend-item"><span class="dot" style="background:#d97706;"></span> Control Branch</div>
-      <div class="legend-item"><span class="dot" style="background:#059669;"></span> Assignment / Stmt</div>
-      <div class="legend-item"><span class="dot" style="background:#dc2626;"></span> Insecure / Tainted</div>
+      <div class="legend-title">PDG Node Typology</div>
+      <div class="legend-item"><span class="dot" style="background:#312e81; border: 1px solid #6366f1;"></span> Function Def</div>
+      <div class="legend-item"><span class="dot" style="background:#78350f; border: 1px solid #f59e0b;"></span> Branch (If/For)</div>
+      <div class="legend-item"><span class="dot" style="background:#064e3b; border: 1px solid #10b981;"></span> Statement / Assign</div>
+      <div class="legend-item"><span class="dot" style="background:#581c87; border: 1px solid #a855f7;"></span> Return Stmt</div>
+      <div class="legend-item"><span class="dot" style="background:#7f1d1d; border: 1px solid #ef4444;"></span> Insecure Sink</div>
+      <div style="height: 4px;"></div>
+      <div class="legend-title">Edge Dependencies</div>
       <div class="legend-item"><span class="line-dash"></span> Control Edge</div>
-      <div class="legend-item"><span class="line-solid"></span> Data Flow</div>
+      <div class="legend-item"><span class="line-solid"></span> Data Dependency</div>
       <div class="legend-item"><span class="line-taint"></span> Tainted Flow</div>
     </div>
   </div>
@@ -289,32 +359,41 @@ def generate_pdg_html(
       edges: edgesDataSet
     }};
 
+    // 100% Static Layout: Hierarchical directed tree with physics completely disabled
     const options = {{
-      physics: {{
-        enabled: true,
-        solver: "barnesHut",
-        barnesHut: {{
-          gravitationalConstant: -2800,
-          centralGravity: 0.25,
-          springLength: 130,
-          springConstant: 0.04,
-          damping: 0.12,
-          avoidOverlap: 0.4
-        }},
-        stabilization: {{
-          iterations: 150,
-          updateInterval: 25
+      layout: {{
+        hierarchical: {{
+          enabled: true,
+          direction: "UD",            // Up-to-Down flow (Root at top, Returns at bottom)
+          sortMethod: "directed",      // Follows semantic flow
+          levelSeparation: 95,
+          nodeSpacing: 180,
+          treeSpacing: 220,
+          blockShifting: true,
+          edgeMinimization: true,
+          parentCentralization: true
         }}
+      }},
+      physics: {{
+        enabled: false               // Completely static - zero bouncing, zero movement
       }},
       interaction: {{
         hover: true,
         tooltipDelay: 100,
         navigationButtons: true,
-        keyboard: true
+        keyboard: true,
+        dragNodes: true,             // Can manually reposition a node if desired without dragging others
+        dragView: true,
+        zoomView: true
       }}
     }};
 
     const network = new vis.Network(container, data, options);
+
+    // Initial fit once loaded
+    network.once("afterDrawing", function() {{
+      network.fit();
+    }});
 
     // Node selection inspector
     network.on("selectNode", function(params) {{
@@ -322,8 +401,15 @@ def generate_pdg_html(
         const nodeId = params.nodes[0];
         const node = nodesDataSet.get(nodeId);
         nodeDetails.style.display = "block";
-        nodeDetails.innerHTML = `<div style="font-weight:bold; color:#38bdf8; margin-bottom:4px;">Node Inspector: ${{nodeId}}</div>
-                                 <div style="font-size:11px; color:#cbd5e1; word-break:break-word;">${{node.title.replace(/\\n/g, "<br/>")}}</div>`;
+        nodeDetails.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <strong style="color:#38bdf8; font-size:13px;">Node Inspector: ${{nodeId}}</strong>
+            <button onclick="document.getElementById('node-details').style.display='none'" style="background:none; border:none; color:#94a3b8; cursor:pointer; font-size:14px;">&times;</button>
+          </div>
+          <div style="font-size:11px; color:#cbd5e1; line-height:1.4; word-break:break-word;">
+            ${{node.title.replace(/\\n/g, "<br/>")}}
+          </div>
+        `;
       }}
     }});
 

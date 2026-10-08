@@ -261,10 +261,10 @@ if ctx is not None or opt is not None:
     tabs = st.tabs([
         "🧠 Multi-Agent Intelligence",
         "🛡️ Security & CWE Audit",
-        "⚡ Green & Secure Optimizer",
-        "🌐 Interactive PDG (Physics)",
+        "🌐 Interactive PDG Graph",
         "🌿 Green & Hardware Profiler",
-        "🌳 AST Structure"
+        "🌳 AST Structure",
+        "⚡ Green & Secure Optimizer"
     ])
 
     # ─────────────────────────────────────────────────────────────
@@ -373,9 +373,81 @@ if ctx is not None or opt is not None:
                     st.write(f"- {rem}")
 
     # ─────────────────────────────────────────────────────────────
-    # TAB 3: Autonomous Green & Secure Optimizer
+    # TAB 3: Static & High-Contrast PDG Graph
     # ─────────────────────────────────────────────────────────────
     with tabs[2]:
+        st.markdown("### 🌐 Program Dependence Graph (Static & Clean)")
+        st.caption("Structured, motionless dependency graph with zero jitter. Zoom, pan, and click nodes to inspect semantic control and data dependencies.")
+
+        active_graph = ctx.pdg_graph if ctx else None
+        active_taints = ctx.security_profile.get("tainted_flows", []) if ctx else []
+
+        if not active_graph:
+            from pdg_extractor import extract_pdg_graph
+            active_graph = extract_pdg_graph(code_input)
+
+        if active_graph.get("status") == "ok":
+            html_vis = generate_pdg_html(active_graph, tainted_flows=active_taints, height="560px")
+            components.html(html_vis, height=580)
+        else:
+            st.error(f"Failed to generate PDG: {active_graph.get('error')}")
+
+    # ─────────────────────────────────────────────────────────────
+    # TAB 4: Green Computing & Hardware Profiler
+    # ─────────────────────────────────────────────────────────────
+    with tabs[3]:
+        st.markdown("### 🌿 Green Computing & Runtime Hardware Profiling")
+        
+        green = ctx.green_profile if ctx else {}
+        hw = ctx.hardware_profile if ctx else {}
+
+        # Top row: Hardware real-time metrics
+        if hw:
+            st.markdown("#### ⚡ Real-Time Dynamic Hardware Performance")
+            h1, h2, h3, h4 = st.columns(4)
+            h1.metric("Execution Latency", f"{hw.get('latency_ms', 0):.2f} ms")
+            h2.metric("CPU Execution Time", f"{hw.get('cpu_time_ms', 0):.2f} ms", f"{hw.get('cpu_percent', 0)}% CPU")
+            h3.metric("Peak Memory (RAM)", f"{hw.get('peak_ram_mb', 0):.4f} MB")
+            h4.metric("Dynamic Energy", f"{hw.get('dynamic_energy_kwh', 0):.8f} kWh")
+
+        st.markdown("#### 🍃 Static Green Computing Profile")
+        if green:
+            g1, g2, g3 = st.columns(3)
+            g1.metric("Eco-Efficiency Score", f"{green.get('score', 100)}/100")
+            g2.metric("Rating", green.get("rating", "Efficient"))
+            g3.metric("Estimated CO2e", f"{green.get('estimated_co2_kg', 0):.8f} kg")
+
+            st.info(green.get("summary", ""))
+
+            st.markdown("#### Recommendations for Sustainable Code")
+            for rec in green.get("recommendations", []):
+                st.write(f"- {rec}")
+
+            # Charts
+            if "chart_data" in green:
+                c1, c2 = st.columns(2)
+                with c1:
+                    st.markdown("##### Control Flow Distribution")
+                    st.bar_chart({"Value": green["chart_data"].get("Control Flow", {})})
+                with c2:
+                    st.markdown("##### Efficiency Signals")
+                    st.bar_chart({"Value": green["chart_data"].get("Efficiency Signals", {})})
+
+    # ─────────────────────────────────────────────────────────────
+    # TAB 5: AST Structure
+    # ─────────────────────────────────────────────────────────────
+    with tabs[4]:
+        st.markdown("### 🌳 Abstract Syntax Tree (AST) Hierarchy")
+        ast_text = ctx.ast_context if ctx else ""
+        if not ast_text:
+            from ast_extractor import extract_ast_context
+            ast_text = extract_ast_context(code_input)
+        st.code(ast_text, language="text")
+
+    # ─────────────────────────────────────────────────────────────
+    # TAB 6: Autonomous Green & Secure Optimizer (Placed at Last)
+    # ─────────────────────────────────────────────────────────────
+    with tabs[5]:
         if opt is None:
             # If agent pipeline was run, offer 1-click optimization
             st.info("Click **⚡ Run Green & Secure Optimizer** to refactor, secure, and verify your code.")
@@ -430,75 +502,3 @@ if ctx is not None or opt is not None:
                 st.markdown("#### 🌿 Algorithmic Improvements")
                 for a in opt.algorithmic_improvements:
                     st.info(f"Speedup: {a}")
-
-    # ─────────────────────────────────────────────────────────────
-    # TAB 4: Interactive Physics PDG Graph
-    # ─────────────────────────────────────────────────────────────
-    with tabs[3]:
-        st.markdown("### 🌐 Program Dependence Graph (vis.js Physics Simulation)")
-        st.caption("Drag nodes, zoom, toggle control/data edges, and click on nodes to inspect structural dependencies.")
-
-        active_graph = ctx.pdg_graph if ctx else None
-        active_taints = ctx.security_profile.get("tainted_flows", []) if ctx else []
-
-        if not active_graph:
-            from pdg_extractor import extract_pdg_graph
-            active_graph = extract_pdg_graph(code_input)
-
-        if active_graph.get("status") == "ok":
-            html_vis = generate_pdg_html(active_graph, tainted_flows=active_taints, height="560px")
-            components.html(html_vis, height=580)
-        else:
-            st.error(f"Failed to generate PDG: {active_graph.get('error')}")
-
-    # ─────────────────────────────────────────────────────────────
-    # TAB 5: Green Computing & Hardware Profiler
-    # ─────────────────────────────────────────────────────────────
-    with tabs[4]:
-        st.markdown("### 🌿 Green Computing & Runtime Hardware Profiling")
-        
-        green = ctx.green_profile if ctx else {}
-        hw = ctx.hardware_profile if ctx else {}
-
-        # Top row: Hardware real-time metrics
-        if hw:
-            st.markdown("#### ⚡ Real-Time Dynamic Hardware Performance")
-            h1, h2, h3, h4 = st.columns(4)
-            h1.metric("Execution Latency", f"{hw.get('latency_ms', 0):.2f} ms")
-            h2.metric("CPU Execution Time", f"{hw.get('cpu_time_ms', 0):.2f} ms", f"{hw.get('cpu_percent', 0)}% CPU")
-            h3.metric("Peak Memory (RAM)", f"{hw.get('peak_ram_mb', 0):.4f} MB")
-            h4.metric("Dynamic Energy", f"{hw.get('dynamic_energy_kwh', 0):.8f} kWh")
-
-        st.markdown("#### 🍃 Static Green Computing Profile")
-        if green:
-            g1, g2, g3 = st.columns(3)
-            g1.metric("Eco-Efficiency Score", f"{green.get('score', 100)}/100")
-            g2.metric("Rating", green.get("rating", "Efficient"))
-            g3.metric("Estimated CO2e", f"{green.get('estimated_co2_kg', 0):.8f} kg")
-
-            st.info(green.get("summary", ""))
-
-            st.markdown("#### Recommendations for Sustainable Code")
-            for rec in green.get("recommendations", []):
-                st.write(f"- {rec}")
-
-            # Charts
-            if "chart_data" in green:
-                c1, c2 = st.columns(2)
-                with c1:
-                    st.markdown("##### Control Flow Distribution")
-                    st.bar_chart({"Value": green["chart_data"].get("Control Flow", {})})
-                with c2:
-                    st.markdown("##### Efficiency Signals")
-                    st.bar_chart({"Value": green["chart_data"].get("Efficiency Signals", {})})
-
-    # ─────────────────────────────────────────────────────────────
-    # TAB 6: AST Structure
-    # ─────────────────────────────────────────────────────────────
-    with tabs[5]:
-        st.markdown("### 🌳 Abstract Syntax Tree (AST) Hierarchy")
-        ast_text = ctx.ast_context if ctx else ""
-        if not ast_text:
-            from ast_extractor import extract_ast_context
-            ast_text = extract_ast_context(code_input)
-        st.code(ast_text, language="text")

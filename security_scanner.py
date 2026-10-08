@@ -26,6 +26,7 @@ CWE_CATEGORY_MAP = {
     'CWE-259':  'Hardcoded Password',
     'CWE-321':  'Hardcoded Cryptographic Key',
     'CWE-22':   'Path Traversal',
+    'CWE-29':   'Path Traversal via Archive (Zip Slip)',
     'CWE-918':  'Server-Side Request Forgery (SSRF)',
     'CWE-611':  'XML External Entity (XXE)',
     'CWE-120':  'Buffer Overflow',
@@ -34,9 +35,16 @@ CWE_CATEGORY_MAP = {
     'CWE-601':  'Open Redirect',
     'CWE-209':  'Information Exposure Through Error Message',
     'CWE-532':  'Sensitive Info Exposure in Logs',
+    'CWE-117':  'Log Injection / Output Neutralization in Logs',
     'CWE-90':   'LDAP Injection',
     'CWE-643':  'XPath Injection',
     'CWE-943':  'NoSQL Injection',
+    'CWE-377':  'Insecure Temporary File Creation',
+    'CWE-732':  'Incorrect Permission Assignment',
+    'CWE-703':  'Improper Check of Exceptional Conditions (Assert in Security)',
+    'CWE-1333': 'Inefficient Regular Expression Complexity (ReDoS)',
+    'CWE-489':  'Active Debug Flag in Production',
+    'CWE-319':  'Cleartext Transmission of Sensitive Information',
 }
 
 PYTHON_SECURITY_PATTERNS = [
@@ -56,6 +64,9 @@ PYTHON_SECURITY_PATTERNS = [
     (r'\.raw\s*\(\s*\w[^"\'()\n]*\+',
      '[CWE-89] SQL Injection: Raw ORM query with string concatenation.',
      'HIGH', 'sec.py.sqli-orm-raw'),
+    (r'cursor\.(execute|executemany)\s*\(\s*["\'].*\{[a-zA-Z_]',
+     '[CWE-89] SQL Injection: str.format() used to construct SQL query. Use query placeholders.',
+     'HIGH', 'sec.py.sqli-strformat'),
 
     # ── Command Injection (CWE-78) ──
     (r'subprocess\.(Popen|call|run|check_call|check_output)\s*\([^)]*shell\s*=\s*True',
@@ -67,6 +78,9 @@ PYTHON_SECURITY_PATTERNS = [
     (r'\bos\.popen\s*\(',
      '[CWE-78] Command Injection: os.popen() spawns a shell. Use subprocess with safe list args.',
      'CRITICAL', 'sec.py.cmd-os-popen'),
+    (r'\bpty\.spawn\s*\(',
+     '[CWE-78] Command Injection: pty.spawn() can spawn arbitrary interactive shell sessions.',
+     'HIGH', 'sec.py.cmd-pty-spawn'),
 
     # ── Code Injection (CWE-94) ──
     (r'\beval\s*\(',
@@ -81,6 +95,9 @@ PYTHON_SECURITY_PATTERNS = [
     (r'jinja2\.Template\s*\(\s*\w',
      '[CWE-94] Server-Side Template Injection (SSTI): Jinja2 template instantiated from dynamic variable.',
      'HIGH', 'sec.py.ssti-jinja2'),
+    (r'render_template_string\s*\(',
+     '[CWE-94] Server-Side Template Injection (SSTI): render_template_string() with dynamic input leads to RCE.',
+     'HIGH', 'sec.py.ssti-flask-render'),
 
     # ── Insecure Deserialization (CWE-502) ──
     (r'\bpickle\.loads?\s*\(',
@@ -101,6 +118,9 @@ PYTHON_SECURITY_PATTERNS = [
     (r'\bmarshal\.loads?\s*\(',
      '[CWE-502] Unsafe Deserialization: marshal is intended for Python byte code, not untrusted data.',
      'HIGH', 'sec.py.deser-marshal'),
+    (r'\bshelve\.open\s*\(',
+     '[CWE-502] Unsafe Deserialization: shelve uses pickle under the hood, vulnerable to object injection.',
+     'HIGH', 'sec.py.deser-shelve'),
 
     # ── Hardcoded Secrets & Credentials (CWE-798, CWE-259, CWE-321) ──
     (r'AKIA[0-9A-Z]{16}',
@@ -109,9 +129,12 @@ PYTHON_SECURITY_PATTERNS = [
     (r'(?i)(password|passwd|pwd)\s*=\s*["\'][^"\']{3,}["\']',
      '[CWE-259] Hardcoded plaintext password detected. Use environment variables or a secret vault.',
      'HIGH', 'sec.py.secrets-password'),
-    (r'(?i)(secret_key|api_key|access_token|private_key)\s*=\s*["\'][^"\']{8,}["\']',
+    (r'(?i)(secret_key|api_key|access_token|private_key|jwt_secret)\s*=\s*["\'][^"\']{8,}["\']',
      '[CWE-321] Hardcoded secret or API key. Avoid committing tokens to source control.',
      'HIGH', 'sec.py.secrets-apikey'),
+    (r'-----BEGIN (RSA|EC|DSA|OPENSSH) PRIVATE KEY-----',
+     '[CWE-321] Hardcoded Private Key block found in source file.',
+     'CRITICAL', 'sec.shared.private-key-header'),
 
     # ── Broken / Weak Cryptography (CWE-327, CWE-338, CWE-295) ──
     (r'\bhashlib\.md5\s*\(',
@@ -120,10 +143,13 @@ PYTHON_SECURITY_PATTERNS = [
     (r'\bhashlib\.sha1\s*\(',
      '[CWE-327] Weak Hash: SHA-1 is cryptographically weak. Use SHA-256 or SHA-3.',
      'MEDIUM', 'sec.py.crypto-sha1'),
-    (r'\bCipher\.DES\b|\bCrypto\.Cipher\.DES\b',
-     '[CWE-327] Weak Cipher: DES encryption uses an insecure 56-bit key. Use AES-256-GCM.',
-     'HIGH', 'sec.py.crypto-des'),
-    (r'\brandom\.(random|randint|choice|randrange)\s*\(',
+    (r'\bCipher\.(DES|ARC4|Blowfish)\b|\bCrypto\.Cipher\.(DES|ARC4|Blowfish)\b',
+     '[CWE-327] Weak Cipher: Insecure legacy cipher algorithm. Use AES-256-GCM or ChaCha20.',
+     'HIGH', 'sec.py.crypto-weak-cipher'),
+    (r'MODE_ECB\b',
+     '[CWE-327] Insecure Cipher Mode: ECB mode does not provide serious pattern confidentiality. Use GCM or CBC.',
+     'HIGH', 'sec.py.crypto-ecb'),
+    (r'\brandom\.(random|randint|choice|randrange|sample)\s*\(',
      '[CWE-338] Insecure PRNG: random module is not cryptographically secure. Use the secrets module for security tokens.',
      'LOW', 'sec.py.crypto-prng'),
     (r'ssl\._create_unverified_context\s*\(',
@@ -133,10 +159,18 @@ PYTHON_SECURITY_PATTERNS = [
      '[CWE-295] Disabled SSL Verification in requests (verify=False). Re-enable SSL verification.',
      'HIGH', 'sec.py.requests-ssl-false'),
 
-    # ── Path Traversal (CWE-22) ──
+    # ── Path Traversal & Zip Slip (CWE-22, CWE-29) ──
     (r'open\s*\([^,)]*\+[^,)]*\)',
      '[CWE-22] Potential Path Traversal: Concatenating variables into open() path without validation. Use os.path.abspath validation or pathlib.Path.resolve().',
      'MEDIUM', 'sec.py.path-open-concat'),
+    (r'\.extractall\s*\([^)]*\)',
+     '[CWE-29] Zip Slip Vulnerability: Unsanitized extractall() can overwrite system files via ../ paths.',
+     'HIGH', 'sec.py.path-zip-slip'),
+
+    # ── Cross-Site Scripting (XSS) (CWE-79) ──
+    (r'\bmark_safe\s*\(|Markup\s*\(',
+     '[CWE-79] Cross-Site Scripting (XSS): Disabling auto-escaping via mark_safe() or Markup(). Ensure inputs are sanitized.',
+     'HIGH', 'sec.py.xss-mark-safe'),
 
     # ── XML External Entity (XXE) (CWE-611) ──
     (r'xml\.etree\.ElementTree\.parse\s*\(',
@@ -144,14 +178,47 @@ PYTHON_SECURITY_PATTERNS = [
      'MEDIUM', 'sec.py.xxe-etree'),
 
     # ── Server-Side Request Forgery (SSRF) (CWE-918) ──
-    (r'(requests\.get|urllib\.request\.urlopen)\s*\(\s*[a-zA-Z_]\w*',
+    (r'(requests\.get|requests\.post|urllib\.request\.urlopen|httpx\.get)\s*\(\s*[a-zA-Z_]\w*',
      '[CWE-918] Potential SSRF: Network call with dynamic variable destination. Allowlist permitted hostnames/IPs.',
      'MEDIUM', 'sec.py.ssrf-dynamic-url'),
 
-    # ── Insecure Configuration & Logging (CWE-94, CWE-532) ──
-    (r'app\.run\s*\([^)]*debug\s*=\s*True',
-     '[CWE-94] Insecure Configuration: Flask debug=True exposes interactive debugger leading to RCE in production.',
-     'HIGH', 'sec.py.flask-debug-true'),
+    # ── CSRF Exemption (CWE-352) ──
+    (r'@csrf_exempt',
+     '[CWE-352] CSRF Protection Disabled: @csrf_exempt disables cross-site request forgery checks on this endpoint.',
+     'HIGH', 'sec.py.csrf-exempt'),
+
+    # ── Open Redirect (CWE-601) ──
+    (r'redirect\s*\(\s*request\.(args|GET|values|form)\[',
+     '[CWE-601] Open Redirect: Untrusted redirect target directly retrieved from request parameters.',
+     'MEDIUM', 'sec.py.open-redirect'),
+
+    # ── Logging Vulnerabilities (CWE-532, CWE-117) ──
+    (r'logging\.(info|debug|warning|error)\s*\([^)]*(password|token|secret|key|pwd)',
+     '[CWE-532] Sensitive Data in Logs: Logging credential-like variables may leak secrets into monitoring services.',
+     'HIGH', 'sec.py.log-secrets'),
+
+    # ── Insecure Temporary Files (CWE-377) ──
+    (r'\btempfile\.mktemp\s*\(',
+     '[CWE-377] Insecure Temporary File: tempfile.mktemp() is deprecated and vulnerable to symlink race conditions. Use tempfile.NamedTemporaryFile().',
+     'HIGH', 'sec.py.insecure-tempfile'),
+
+    # ── Incorrect Permissions (CWE-732) ──
+    (r'os\.chmod\s*\([^)]*0[oO]?777',
+     '[CWE-732] Overly Permissive File Permissions: Setting permissions to 777 grants full world read/write/execute.',
+     'HIGH', 'sec.py.perms-chmod-777'),
+
+    # ── Misuse of Assert for Security (CWE-703) ──
+    (r'assert\s+.*(admin|role|permission|authenticated|token|is_valid|auth)',
+     '[CWE-703] Security Check via Assert: assert statements are stripped when Python runs with optimization (-O / -OO). Use explicit if/raise exceptions.',
+     'HIGH', 'sec.py.assert-in-security'),
+
+    # ── Insecure Configuration & Cleartext (CWE-489, CWE-319) ──
+    (r'app\.run\s*\([^)]*debug\s*=\s*True|DEBUG\s*=\s*True',
+     '[CWE-489] Active Debug Flag: Debug mode exposes interactive debuggers or stack traces to end users.',
+     'HIGH', 'sec.py.debug-flag-active'),
+    (r'http://[a-zA-Z0-9_\-\.]+\.(com|org|net|io|api)',
+     '[CWE-319] Cleartext HTTP Transmission: Sensitive web traffic over unencrypted http://. Use https://.',
+     'LOW', 'sec.py.cleartext-http'),
 ]
 
 
@@ -326,6 +393,26 @@ class SecurityAuditor:
                 rems.append("Enable TLS/SSL verification (remove verify=False or unverified contexts)")
             elif cwe == 'CWE-22':
                 rems.append("Validate file paths using os.path.abspath or pathlib.Path.resolve() before opening")
+            elif cwe == 'CWE-29':
+                rems.append("Sanitize archive member paths before calling extractall() to prevent Zip Slip directory traversal")
+            elif cwe == 'CWE-79':
+                rems.append("Avoid mark_safe() or Markup() on dynamic inputs; leverage auto-escaping to mitigate XSS")
+            elif cwe == 'CWE-352':
+                rems.append("Enable CSRF protection tokens; do not disable checks via @csrf_exempt")
+            elif cwe == 'CWE-601':
+                rems.append("Validate target URLs against an allowed domain whitelist before issuing HTTP redirects")
+            elif cwe == 'CWE-377':
+                rems.append("Use tempfile.NamedTemporaryFile() or tempfile.mkstemp() instead of deprecated mktemp()")
+            elif cwe == 'CWE-732':
+                rems.append("Restrict file permissions to minimal necessary access (e.g., 0o600 or 0o700 instead of 0o777)")
+            elif cwe == 'CWE-703':
+                rems.append("Do not rely on assert for access control or validation; use explicit conditional checks and raise exceptions")
+            elif cwe == 'CWE-489':
+                rems.append("Disable debug flags (DEBUG=False, app.run(debug=False)) in production deployments")
+            elif cwe == 'CWE-319':
+                rems.append("Encrypt data in transit by replacing unencrypted HTTP/FTP endpoints with HTTPS/SFTP")
+            elif cwe in ['CWE-532', 'CWE-117']:
+                rems.append("Sanitize logged output and mask secrets/passwords before writing to log streams")
 
         if not rems:
             rems.append("No active security vulnerabilities detected; code adheres to basic security best practices.")
