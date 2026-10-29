@@ -34,6 +34,14 @@ from green_computing import analyze_green_computing
 from security_scanner import SecurityAuditor
 from self_healing import SelfHealingAgent
 
+# ── Pillar 3F: Optimizer Output AST Firewall ──────────────────────────────────
+try:
+    from agent_security.optimizer_firewall import audit_optimizer_output
+    _FIREWALL_AVAILABLE = True
+except ImportError:
+    _FIREWALL_AVAILABLE = False
+# ─────────────────────────────────────────────────────────────────────────────
+
 # ── Pillar 1: Input Privacy & Anti-Hijack Shield ──────────────────────────────
 try:
     from agent_security.input_shield import SecretVault, build_enveloped_prompt
@@ -300,11 +308,18 @@ Source Code:
         response_text = self._call_llm(user_prompt, system_prompt=system_prompt)
         if response_text:
             extracted = self._extract_code_block(response_text)
-            if extracted and self._can_parse(extracted):
-                # ── Pillar 1: restore real secret values in the returned code ──
-                if vault is not None:
-                    extracted = vault.unmask(extracted)
-                return extracted
+            if extracted:
+                # ── Pillar 3G: AST Firewall audit before accepting candidate ──
+                if _FIREWALL_AVAILABLE:
+                    is_clean, violations = audit_optimizer_output(extracted, original_source=source_code)
+                    if not is_clean:
+                        return self._apply_deterministic_rules(source_code)
+                # ─────────────────────────────────────────────────────────────
+                if self._can_parse(extracted):
+                    # ── Pillar 1: restore real secret values in the returned code ──
+                    if vault is not None:
+                        extracted = vault.unmask(extracted)
+                    return extracted
 
         # Fallback to rule-based transformer (no LLM involved; no masking needed).
         return self._apply_deterministic_rules(source_code)

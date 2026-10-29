@@ -1,5 +1,13 @@
 import ast
 
+# ── Pillar 3C: Nesting Guard ────────────────────────────────────────────────────
+try:
+    from agent_security.nesting_guard import check_nesting_depth, NestingTooDeep
+    _NESTING_GUARD_AVAILABLE = True
+except ImportError:
+    _NESTING_GUARD_AVAILABLE = False
+# ─────────────────────────────────────────────────────────────────────────────
+
 class CodeFeatureExtractor(ast.NodeVisitor):
     def __init__(self):
         self.features = {
@@ -48,6 +56,15 @@ def extract_ast_context(source_code: str) -> str:
     """
 
     try:
+        # ── Pillar 3C: reject depth-bomb inputs before calling ast.parse() ───
+        if _NESTING_GUARD_AVAILABLE:
+            is_safe, depth = check_nesting_depth(source_code)
+            if not is_safe:
+                return (
+                    f"AST parsing rejected: nesting depth {depth} exceeds safety "
+                    f"limit (Pillar 3 Nesting Guard). Code not parsed."
+                )
+        # ─────────────────────────────────────────────────────────────────────
         tree = ast.parse(source_code)
 
         # -------- FEATURE EXTRACTION --------

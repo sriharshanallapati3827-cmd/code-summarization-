@@ -34,11 +34,14 @@
 
 ---
 
-## Pillar 3 — Agent Code Hardening & Sandbox  ⬜ NOT STARTED
+## Pillar 3 — Agent Code Hardening & Sandbox  ✅ COMPLETE
+**Files created:** `agent_security/exec_guard.py`, `agent_security/nesting_guard.py`, `agent_security/optimizer_firewall.py`, `agent_security/regex_timeout.py`
+**Files modified:** `hardware_profiler.py`, `ast_extractor.py`, `self_healing.py`, `optimizer_agent.py`, `security_scanner.py`, `agent_security/__init__.py`
+**Tests:** `agent_security/tests/test_pillar3.py`
 
-### What needs to be BUILT
+### What was BUILT
 
-#### 3A — `agent_security/exec_guard.py`  ⬜
+#### 3A — `agent_security/exec_guard.py`  ✅
 New file. AST-based static analysis before any `exec()` call.
 
 | Item | Detail |
@@ -47,14 +50,14 @@ New file. AST-based static analysis before any `exec()` call.
 | `def check_exec_safety(source: str) -> tuple[bool, list[str]]` | Returns `(is_safe, reasons)`. Fails closed on any parse error. |
 | `class ExecBlocked(Exception)` | Carries `reasons` list |
 
-#### 3B — Hook: `hardware_profiler.py` → `profile_code_snippet()`  ⬜
-Surgical 5-line change at line 96:
-- Call `check_exec_safety(source_code)` before `compile()`
-- If unsafe → raise `ExecBlocked` (caught, returns a safe error metrics dict)
-- Wrap `exec()` block in a `threading.Timer` for `PROFILER_TIMEOUT_SECONDS`
-- Add RSS memory check inside `_runner()` against `PROFILER_MEMORY_LIMIT_MB`
+#### 3B — Hook: `hardware_profiler.py` → `profile_code_snippet()`  ✅
+Hardening before execution:
+- Calls `check_exec_safety(source_code)` before `compile()`
+- If unsafe → returns safe blocked metrics dict
+- Wraps execution in daemon thread watchdog with `PROFILER_TIMEOUT_SECONDS` (2.0s)
+- Adds peak RAM check against `PROFILER_MEMORY_LIMIT_MB` (50MB)
 
-#### 3C — `agent_security/nesting_guard.py`  ⬜
+#### 3C — `agent_security/nesting_guard.py`  ✅
 New file. Prevents recursion/call-stack exhaustion.
 
 | Item | Detail |
@@ -63,16 +66,16 @@ New file. Prevents recursion/call-stack exhaustion.
 | `def check_ast_depth(tree: ast.AST, max_depth: int = MAX_AST_DEPTH) -> tuple[bool, int]` | Walks parsed AST recursively counting depth. Returns `(is_safe, actual_depth)`. |
 | `class NestingTooDeep(Exception)` | Carries `actual_depth` |
 
-#### 3D — Hook: `ast_extractor.py` → `extract_ast_context()`  ⬜
-Surgical 3-line change before `ast.parse()` at line 51:
-- Call `check_nesting_depth(source_code)` first
-- If fails → return safe error string, no parse attempt
+#### 3D — Hook: `ast_extractor.py` → `extract_ast_context()`  ✅
+Change before `ast.parse()`:
+- Calls `check_nesting_depth(source_code)` first
+- If fails → returns safe error string, no parse attempt
 
-#### 3E — Hook: `self_healing.py` → `heal()`  ⬜
-Surgical 3-line change before each `ast.parse()` call (lines 47, 64, 91):
-- Same `check_nesting_depth` guard
+#### 3E — Hook: `self_healing.py` → `heal()`  ✅
+Change before `ast.parse()` calls:
+- Same `check_nesting_depth` guard returning structured diagnostic error without crash
 
-#### 3F — `agent_security/optimizer_firewall.py`  ⬜
+#### 3F — `agent_security/optimizer_firewall.py`  ✅
 New file. AST firewall for LLM-generated optimizer output.
 
 | Item | Detail |
@@ -81,29 +84,36 @@ New file. AST firewall for LLM-generated optimizer output.
 | `def audit_optimizer_output(source: str) -> tuple[bool, list[str]]` | Parses output AST, checks for new dangerous imports/calls not in whitelist, returns `(is_clean, violations)` |
 | `class OptimizerOutputTainted(Exception)` | Carries `violations` list |
 
-#### 3G — Hook: `optimizer_agent.py` → `_generate_candidate_code()`  ⬜
-3-line change after `extracted = self._extract_code_block(response_text)`:
-- Call `audit_optimizer_output(extracted)` before `self._can_parse()`
-- If tainted → fall through to deterministic fallback (never return tainted code)
+#### 3G — Hook: `optimizer_agent.py` → `_generate_candidate_code()`  ✅
+Change after `extracted = self._extract_code_block(response_text)`:
+- Calls `audit_optimizer_output(extracted, original_source=source_code)` before `self._can_parse()`
+- If tainted → falls through to deterministic fallback (never return tainted code)
 
 ---
 
-## Pillar 4 — Red-Team Test Suite  ⬜ NOT STARTED
+## Session B — Regex Timeout / ReDoS Guard  ✅ COMPLETE
+**Files created:** `agent_security/regex_timeout.py`
+**Files modified:** `security_scanner.py`, `agent_security/__init__.py`
 
-**File to create:** `test_agent_security.py` (project root)
+| Item | Detail | Status |
+|---|---|---|
+| `agent_security/regex_timeout.py` | Thread-based `timed_search()` and `timed_match()` wrappers with `REGEX_TIMEOUT_SECONDS` (0.5s) | ✅ |
+| Hook: `security_scanner.py` | Replaces bare `re.search(pattern, line)` with `timed_search(pattern, line)` | ✅ |
+
+
+---
+
+## Pillar 4 — Red-Team Test Suite  ✅ COMPLETE
+
+**File created:** `test_agent_security.py` (project root)
 
 | Attack | Target | Defence | Status |
 |---|---|---|---|
-| 1. Host Command Injection (`os.system("rm -rf /")`) | `hardware_profiler.py` `profile_code_snippet()` | AST Gatekeeper (3B) | ⬜ |
-| 2. Indirect Prompt Injection in docstring | `optimizer_agent.py` LLM call | XML Envelope (Pillar 1) | ⬜ |
-| 3. Recursion Depth Bomb (`((((1))))*2000`) | `ast_extractor.py` `extract_ast_context()` | Nesting Limiter (3C/3D) | ⬜ |
-| 4. Memory Allocation Bomb (`x = [0]*10**9`) | `hardware_profiler.py` `profile_code_snippet()` | RAM + Timeout Watchdog (3B) | ⬜ |
-| 5. ReDoS Backtracking String | `security_scanner.py` | Regex Timeout (signal/threading) | ⬜ |
-
-> **Note on Attack 5:** `security_scanner.py` currently has no regex timeout.
-> `agent_security/config.py` already defines `REGEX_TIMEOUT_SECONDS = 0.5`.
-> A `agent_security/regex_timeout.py` wrapper using `threading` will be needed.
-> The hook in `security_scanner.py` replaces bare `re.search(pattern, line)` with the timed version.
+| 1. Host Command Injection (`os.system("rm -rf /")`) | `hardware_profiler.py` `profile_code_snippet()` | AST Gatekeeper (3B) | ✅ |
+| 2. Indirect Prompt Injection in docstring | `optimizer_agent.py` LLM call | XML Envelope (Pillar 1) | ✅ |
+| 3. Recursion Depth Bomb (`((((1))))*2000`) | `ast_extractor.py` `extract_ast_context()` | Nesting Limiter (3C/3D) | ✅ |
+| 4. Memory Allocation Bomb (`x = [0]*10**9`) | `hardware_profiler.py` `profile_code_snippet()` | RAM + Timeout Watchdog (3B) | ✅ |
+| 5. ReDoS Backtracking String | `security_scanner.py` | Regex Timeout Guard (Session B) | ✅ |
 
 ---
 
@@ -124,5 +134,4 @@ SESSION D  →  Final regression run + git push
 |---|---|
 | `5fdbab9` | feat(security): Pillar 1 – Input Privacy & Anti-Hijack Shield |
 | `3d7cf1a` | feat(security): Pillar 2 – DFA Agent Workflow Guard |
-| _(pending)_ | feat(security): Pillar 3 – Agent Code Hardening & Sandbox |
-| _(pending)_ | feat(security): Pillar 4 – Red-Team Attack Test Suite |
+| `b740722` | feat(security): Pillar 3 & 4 – Agent Hardening, ReDoS Guard, and Red-Team Test Suite |

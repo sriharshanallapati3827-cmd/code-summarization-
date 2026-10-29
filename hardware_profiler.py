@@ -14,6 +14,8 @@ import os
 import sys
 import time
 import tracemalloc
+import threading
+import concurrent.futures
 from typing import Dict, Optional, Callable, Tuple, Any
 
 try:
@@ -21,6 +23,17 @@ try:
     PSUTIL_AVAILABLE = True
 except ImportError:
     PSUTIL_AVAILABLE = False
+
+# ── Pillar 3: exec guard + watchdog limits ───────────────────────────────
+try:
+    from agent_security.exec_guard import check_exec_safety, ExecBlocked
+    from agent_security.config import PROFILER_TIMEOUT_SECONDS, PROFILER_MEMORY_LIMIT_MB
+    _GUARD_AVAILABLE = True
+except ImportError:
+    _GUARD_AVAILABLE = False
+    PROFILER_TIMEOUT_SECONDS = 2.0
+    PROFILER_MEMORY_LIMIT_MB = 50
+# ───────────────────────────────────────────────────────────────────────
 
 
 CARBON_INTENSITY_KG_PER_KWH = 0.475
@@ -95,15 +108,113 @@ class HardwareProfiler:
 
     def profile_code_snippet(self, source_code: str, global_scope: Optional[dict] = None) -> Dict:
         """
-        Compiles and executes a Python code snippet inside an isolated scope to measure hardware usage.
+        Compiles and executes a Python code snippet inside an isolated scope
+        to measure hardware usage.
+
+        Pillar-3 hardening applied BEFORE execution:
+          1. AST Gatekeeper   – blocks forbidden calls (os.system, subprocess, etc.)
+          2. Timeout Watchdog – execution capped at PROFILER_TIMEOUT_SECONDS (2 s)
+          3. Memory Ceiling   – rejects runs that exceed PROFILER_MEMORY_LIMIT_MB (50 MB)
         """
+        # ── Pillar 3A: AST gatekeeper ───────────────────────────────────────────
+        if _GUARD_AVAILABLE:
+            is_safe, reasons = check_exec_safety(source_code)
+            if not is_safe:
+                return {
+                    'status': 'blocked',
+                    'error': 'ExecBlocked: ' + '; '.join(reasons),
+                    'latency_ms': 0.0,
+                    'cpu_time_ms': 0.0,
+                    'cpu_percent': 0.0,
+                    'peak_ram_mb': 0.0,
+                    'rss_memory_mb': 0.0,
+                    'dynamic_energy_kwh': 0.0,
+                    'dynamic_co2_kg': 0.0,
+                    'device_tdp_watts': self.tdp_watts,
+                    'profiler_backend': 'blocked-by-ast-gatekeeper',
+                    'summary': 'Execution blocked by AST Gatekeeper (Pillar 3)',
+                }
+        # ─────────────────────────────────────────────────────────────────────
+
         scope = global_scope or {}
 
+        # ── Pillar 3B: timeout + memory watchdog via ThreadPoolExecutor ────────
         def _runner():
             compiled = compile(source_code, '<profiled_snippet>', 'exec')
-            exec(compiled, scope)
+            exec(compiled, scope)  # noqa: S102 — guarded by AST gatekeeper above
 
-        _, metrics = self.profile_execution(_runner)
+        timeout_secs = float(PROFILER_TIMEOUT_SECONDS)
+        memory_limit_mb = float(PROFILER_MEMORY_LIMIT_MB)
+
+        result_holder = {}
+
+        def _profile_target():
+            try:
+                _, m = self.profile_execution(_runner)
+                result_holder['metrics'] = m
+            except Exception as exc:
+                result_holder['metrics'] = {
+                    'status': 'error',
+                    'error': str(exc),
+                    'latency_ms': 0.0,
+                    'cpu_time_ms': 0.0,
+                    'cpu_percent': 0.0,
+                    'peak_ram_mb': 0.0,
+                    'rss_memory_mb': 0.0,
+                    'dynamic_energy_kwh': 0.0,
+                    'dynamic_co2_kg': 0.0,
+                    'device_tdp_watts': self.tdp_watts,
+                    'profiler_backend': 'error',
+                    'summary': f'Execution error: {exc}',
+                }
+
+        worker = threading.Thread(target=_profile_target, daemon=True)
+        worker.start()
+        worker.join(timeout=timeout_secs)
+
+        if worker.is_alive():
+            return {
+                'status': 'timeout',
+                'error': f'Execution exceeded {timeout_secs}s watchdog limit (Pillar 3)',
+                'latency_ms': timeout_secs * 1000,
+                'cpu_time_ms': 0.0,
+                'cpu_percent': 0.0,
+                'peak_ram_mb': 0.0,
+                'rss_memory_mb': 0.0,
+                'dynamic_energy_kwh': 0.0,
+                'dynamic_co2_kg': 0.0,
+                'device_tdp_watts': self.tdp_watts,
+                'profiler_backend': 'blocked-by-timeout-watchdog',
+                'summary': f'Execution timed out after {timeout_secs}s (Pillar 3)',
+            }
+
+        metrics = result_holder.get('metrics', {
+            'status': 'error',
+            'error': 'Worker terminated without returning metrics',
+            'latency_ms': 0.0,
+            'cpu_time_ms': 0.0,
+            'cpu_percent': 0.0,
+            'peak_ram_mb': 0.0,
+            'rss_memory_mb': 0.0,
+            'dynamic_energy_kwh': 0.0,
+            'dynamic_co2_kg': 0.0,
+            'device_tdp_watts': self.tdp_watts,
+            'profiler_backend': 'error',
+            'summary': 'Execution failed',
+        })
+        # ─────────────────────────────────────────────────────────────────────
+
+        # ── Pillar 3B: memory ceiling check (post-execution) ────────────────
+        peak_ram = metrics.get('peak_ram_mb', 0.0)
+        if peak_ram > memory_limit_mb:
+            metrics['status'] = 'memory_exceeded'
+            metrics['error'] = (
+                f'MemoryBomb: peak RAM {peak_ram:.1f} MB exceeded '
+                f'{memory_limit_mb:.0f} MB ceiling (Pillar 3)'
+            )
+            metrics['summary'] = metrics['error']
+        # ─────────────────────────────────────────────────────────────────────
+
         return metrics
 
     def _get_rss_mb(self) -> float:

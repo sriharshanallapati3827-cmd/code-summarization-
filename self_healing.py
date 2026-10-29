@@ -14,6 +14,14 @@ import ast
 import re
 from typing import Dict, List, Tuple
 
+# ── Pillar 3C: Nesting Guard ────────────────────────────────────────────────────
+try:
+    from agent_security.nesting_guard import check_nesting_depth
+    _NESTING_GUARD_AVAILABLE = True
+except ImportError:
+    _NESTING_GUARD_AVAILABLE = False
+# ─────────────────────────────────────────────────────────────────────────────
+
 
 class SelfHealingAgent:
     """
@@ -41,6 +49,25 @@ class SelfHealingAgent:
                 'repairs': [],
                 'errors_diagnosed': []
             }
+
+        # ── Pillar 3C: nesting depth check before any ast.parse() ────────────
+        if _NESTING_GUARD_AVAILABLE:
+            is_safe, depth = check_nesting_depth(source_code)
+            if not is_safe:
+                return {
+                    'status': 'blocked',
+                    'is_healed': False,
+                    'clean_code': source_code,
+                    'repairs': [],
+                    'errors_diagnosed': [{
+                        'type': 'NestingTooDeep',
+                        'message': f'Nesting depth {depth} exceeds safety limit (Pillar 3)',
+                        'line': 0,
+                        'offset': 0,
+                        'text': '',
+                    }],
+                }
+        # ─────────────────────────────────────────────────────────────────────
 
         # 1. Check if code is already valid
         try:

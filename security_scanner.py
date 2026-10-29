@@ -12,6 +12,15 @@ import ast
 import re
 from typing import List, Dict, Tuple, Optional
 
+# ── Attack 5 / Pillar 3: Regex timeout wrapper to prevent ReDoS ───────────────
+try:
+    from agent_security.regex_timeout import timed_search
+    _TIMED_REGEX_AVAILABLE = True
+except ImportError:
+    _TIMED_REGEX_AVAILABLE = False
+    timed_search = re.search
+# ─────────────────────────────────────────────────────────────────────────────
+
 
 CWE_CATEGORY_MAP = {
     'CWE-89':   'SQL Injection',
@@ -245,7 +254,7 @@ class SecurityAuditor:
 
         for pattern, message, severity, rule_id in self.patterns:
             for idx, line in enumerate(lines):
-                if re.search(pattern, line):
+                if timed_search(pattern, line):
                     key = (rule_id, idx + 1)
                     if key not in seen:
                         seen.add(key)
