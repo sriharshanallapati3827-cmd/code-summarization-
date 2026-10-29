@@ -78,12 +78,12 @@ The core objective is to preserve the existing **5-Agent workflow**, **4-Pillar 
 - [x] Verify interactive graph generation for C++ nested loops and DSA algorithms.
 
 ### Phase 3: Polyglot Security Threat Hunter (C++ CWE Suite)
-- [ ] Build `polyglot/cpp_security_auditor.py` with AST query rules:
+- [x] Build `polyglot/cpp_security_auditor.py` with AST query rules:
   - **CWE-120:** Buffer Overflow (`strcpy`, `strcat`, `gets`, `sprintf`).
   - **CWE-416:** Use-After-Free / Raw Pointer Deletion.
   - **CWE-119:** Out-of-Bounds Memory Access / Unbounded Array Indexing.
   - **CWE-78:** Shell Injection (`system()`, `popen()`).
-- [ ] Standardize finding dictionary matching existing Python scanner format (`rule_id`, `cwe`, `severity`, `line`, `message`, `snippet`).
+- [x] Standardize finding dictionary matching existing Python scanner format (`rule_id`, `cwe`, `severity`, `line`, `message`, `snippet`).
 
 ### Phase 4: C++ Self-Healing Agent Extension
 - [ ] Extend `self_healing.py` with C++ healing strategies:
@@ -115,7 +115,7 @@ The core objective is to preserve the existing **5-Agent workflow**, **4-Pillar 
 |:---:|:---|:---:|:---|
 | **1** | Tree-sitter Grammar Integration | ✅ Complete | `tree-sitter`, `tree-sitter-cpp`, `ParserFactory` |
 | **2** | C++ PDG & Data Flow Extractor | ✅ Complete | `cpp_pdg_extractor.py`, vis.js normalization |
-| **3** | C++ Security Auditor (CWEs) | ⬜ Not Started | AST/Tree-sitter queries for CWE-120, CWE-119, CWE-78 |
+| **3** | C++ Security Auditor (CWEs) | ✅ Complete | AST/Tree-sitter queries for CWE-120, CWE-119, CWE-78 |
 | **4** | C++ Syntax Self-Healer | ⬜ Not Started | Semicolon `;` and brace `{}` autonomous repair |
 | **5** | C++ Profiler & Sandbox | ⬜ Not Started | `g++` compilation harness + static complexity fallback |
 | **6** | UI & Polyglot Presets | ⬜ Not Started | Streamlit language toggle, C++ benchmarks |
