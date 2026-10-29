@@ -70,6 +70,16 @@ class CppSelfHealingAgent:
             current_code = source_code
 
         # 2. Tree-sitter validity check
+        if not ParserFactory.is_available():
+            return {
+                'status': 'healed' if all_repairs else 'valid',
+                'is_healed': len(all_repairs) > 0,
+                'clean_code': current_code,
+                'repairs': all_repairs,
+                'repair_details': all_details,
+                'errors_diagnosed': [],
+            }
+
         parsed = ParserFactory.parse(current_code, language=SupportedLanguage.CPP)
         if parsed.is_valid:
             return {

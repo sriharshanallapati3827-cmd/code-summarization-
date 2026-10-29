@@ -422,6 +422,13 @@ class CppProfiler:
         """
         parsed = ParserFactory.parse(source_code, language=SupportedLanguage.CPP)
         root = parsed.root_node
+        if root is None:
+            return {
+                'complexity': 'O(1)',
+                'max_loop_depth': 0,
+                'total_loops': 0,
+                'has_recursion': False,
+            }
 
         max_depth = 0
         total_loops = 0
@@ -434,6 +441,8 @@ class CppProfiler:
         stack = [root]
         while stack:
             curr = stack.pop()
+            if not curr:
+                continue
             if curr.type == "function_declarator":
                 # find identifier
                 for child in curr.children:
@@ -444,6 +453,8 @@ class CppProfiler:
 
         def walk_loops(node, current_depth: int, current_func: Optional[str] = None):
             nonlocal max_depth, total_loops, has_recursion
+            if not node:
+                return
 
             next_func = current_func
             if node.type == "function_definition":

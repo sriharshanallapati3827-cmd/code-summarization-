@@ -148,9 +148,13 @@ class CppSecurityAuditor:
         seen: Set[Tuple[str, int]]
     ) -> None:
         """Iterative traversal scanning call_expression nodes for dangerous APIs."""
+        if not node:
+            return
         stack = [node]
         while stack:
             curr = stack.pop()
+            if not curr:
+                continue
             if curr.type == "call_expression":
                 func_node = curr.child_by_field_name("function")
                 if func_node:

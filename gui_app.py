@@ -613,13 +613,26 @@ if run_agentic:
     else:
         with st.spinner(f"🤖 5 Specialized Agents Collaborating on {selected_language} Intelligence..."):
             try:
+                import importlib
+                import sys
+                for mod_name in list(sys.modules.keys()):
+                    if mod_name.startswith("polyglot") or mod_name in ("agent_controller", "green_computing"):
+                        try:
+                            importlib.reload(sys.modules[mod_name])
+                        except Exception:
+                            pass
+                from agent_controller import AgentController
+
                 controller = AgentController()
                 lang_code = "cpp" if selected_language == "C++" else "python"
                 ctx = controller.run_workflow(code_input, language=lang_code)
                 st.session_state.agent_context = ctx
                 st.success("Multi-Agent Intelligence Synthesis Complete!")
             except Exception as e:
+                import traceback
                 st.error(f"Error during agentic execution: {e}")
+                with st.expander("Detailed Traceback"):
+                    st.code(traceback.format_exc(), language="python")
 
 # Trigger Optimizer Execution
 if run_optimizer:

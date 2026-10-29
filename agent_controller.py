@@ -45,8 +45,8 @@ try:
     from polyglot.cpp_pdg_extractor import extract_cpp_pdg_context, extract_cpp_pdg_graph
     from polyglot.cpp_security_auditor import CppSecurityAuditor
     from polyglot.cpp_profiler import CppProfiler
-    _POLYGLOT_AVAILABLE = True
-except ImportError:
+    _POLYGLOT_AVAILABLE = ParserFactory.is_available()
+except (ImportError, Exception):
     _POLYGLOT_AVAILABLE = False
 
 # ── Pillar 3B: Input Limits Guard ───────────────────────────────────────────
@@ -304,9 +304,13 @@ class AgentController:
     @staticmethod
     def _format_cpp_ast(root_node, max_depth: int = 8) -> str:
         """Formats Tree-sitter C++ AST node into a readable indented hierarchy."""
+        if root_node is None:
+            return "C++ AST unavailable"
         lines = []
 
         def _walk(curr, depth):
+            if curr is None:
+                return
             if depth > max_depth:
                 lines.append("  " * depth + "...")
                 return
@@ -507,6 +511,8 @@ class AgentController:
         blocks = []
 
         def find_funcs(node):
+            if not node:
+                return
             if node.type == "function_definition":
                 ret_type = "void"
                 func_name = ""
