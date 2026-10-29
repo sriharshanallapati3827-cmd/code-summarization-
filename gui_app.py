@@ -616,7 +616,7 @@ if run_agentic:
                 import importlib
                 import sys
                 for mod_name in list(sys.modules.keys()):
-                    if mod_name.startswith("polyglot") or mod_name in ("agent_controller", "green_computing"):
+                    if mod_name.startswith("polyglot") or mod_name in ("agent_controller", "green_computing", "optimizer_agent"):
                         try:
                             importlib.reload(sys.modules[mod_name])
                         except Exception:
@@ -637,15 +637,29 @@ if run_agentic:
 # Trigger Optimizer Execution
 if run_optimizer:
     if not code_input.strip():
-        st.warning("Please provide Python code to optimize.")
+        st.warning(f"Please provide {selected_language} code to optimize.")
     else:
-        with st.spinner("⚡ Autonomous Optimizer Refactoring & Verifying Code..."):
+        with st.spinner(f"⚡ Autonomous Optimizer Refactoring & Verifying {selected_language} Code..."):
             try:
-                res = optimize_code(code_input, dfa=_get_optimizer_dfa())
+                import importlib
+                import sys
+                for mod_name in list(sys.modules.keys()):
+                    if mod_name.startswith("polyglot") or mod_name in ("agent_controller", "green_computing", "optimizer_agent"):
+                        try:
+                            importlib.reload(sys.modules[mod_name])
+                        except Exception:
+                            pass
+                from optimizer_agent import optimize_code
+
+                lang_code = "cpp" if selected_language == "C++" else "python"
+                res = optimize_code(code_input, language=lang_code, dfa=_get_optimizer_dfa())
                 st.session_state.opt_result = res
                 st.success("Autonomous Optimization & Closed-Loop Verification Finished!")
             except Exception as e:
+                import traceback
                 st.error(f"Error during optimization: {e}")
+                with st.expander("Detailed Traceback"):
+                    st.code(traceback.format_exc(), language="python")
 
 
 # Render Results Tabs
@@ -935,8 +949,9 @@ if ctx is not None or opt is not None:
             # If agent pipeline was run, offer 1-click optimization
             st.info("Click **⚡ Run Green & Secure Optimizer** to refactor, secure, and verify your code.")
             if st.button("Optimize Current Code Now"):
-                with st.spinner("Optimizing..."):
-                    opt = optimize_code(code_input, dfa=_get_optimizer_dfa())
+                with st.spinner(f"Optimizing {selected_language}..."):
+                    lang_code = "cpp" if selected_language == "C++" else "python"
+                    opt = optimize_code(code_input, language=lang_code, dfa=_get_optimizer_dfa())
                     st.session_state.opt_result = opt
                     st.rerun()
         else:
@@ -960,12 +975,13 @@ if ctx is not None or opt is not None:
 
             # Side-by-Side Comparison
             col_orig, col_opt = st.columns(2)
+            code_lang = getattr(opt, "language", None) or ("cpp" if selected_language == "C++" else "python")
             with col_orig:
                 st.markdown("#### ❌ Original Code")
-                st.code(opt.original_code, language="python")
+                st.code(opt.original_code, language=code_lang)
             with col_opt:
                 st.markdown("#### ✅ Refactored & Hardened Code")
-                st.code(opt.optimized_code, language="python")
+                st.code(opt.optimized_code, language=code_lang)
 
             # Unified Diff
             if opt.diff:
