@@ -19,7 +19,7 @@ Modern, interactive dashboard providing:
   5. Green Computing & Real-Time Hardware Profiler (psutil CPU/RAM/latency/energy)
   6. AST Structural Explorer
 
-Authors: M. SATHWIK & N. HARSHA
+Authors: M. Sathwik & N . Sri Harsha
 """
 
 import sys
@@ -425,7 +425,7 @@ st.markdown(
     <div class="hero-banner">
         <h1>Agentic AI Code Intelligence & Security Lab</h1>
         <p>AST &bull; PDG &bull; Qwen LLM &bull; 40+ CWE Security Audits &bull; Self-Healing &bull; Hardware Profiler &bull; Autonomous Green Optimizer</p>
-        <div class="author-badge">Project by M. SATHWIK & N. HARSHA</div>
+        <div class="author-badge">Project by M. Sathwik & N . Sri Harsha</div>
     </div>
     """,
     unsafe_allow_html=True,

@@ -7,7 +7,7 @@
 
 An intelligent code analysis, summarization, security auditing, and optimization pipeline that combines **Abstract Syntax Tree (AST)** structural parsing, **Program Dependence Graph (PDG)** control & data dependency extraction, and **Large Language Models (NLP)**.
 
-Developed by **Sathwik M (25CSB1A22)** and **N Harsha (25CSB1A04)**.
+Developed by **Sathwik M (25CSB1A22)** and **N Sri Harsha (25CSB1A04)**.
 
 ---
 
