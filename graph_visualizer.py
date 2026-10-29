@@ -347,15 +347,15 @@ def generate_pdg_html(
   </div>
 
   <script type="text/javascript">
-    function escapeHtml(str) {
-      if (!str) return '';
-      return String(str)
+    function escapeHtml(s) {{
+      if (!s) return '';
+      return String(s)
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
-    }
+    }}
 
     const rawNodes = {safe_nodes_json};
     const rawEdges = {safe_edges_json};
