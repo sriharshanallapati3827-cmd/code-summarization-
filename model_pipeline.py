@@ -4,6 +4,14 @@ import re
 import requests
 from dotenv import load_dotenv
 
+# ── Pillar 1: Input Privacy & Anti-Hijack Shield ──────────────────────────────
+try:
+    from agent_security.input_shield import SecretVault, build_enveloped_prompt
+    _SHIELD_AVAILABLE = True
+except ImportError:
+    _SHIELD_AVAILABLE = False
+# ─────────────────────────────────────────────────────────────────────────────
+
 load_dotenv()
 
 class CodeSummarizer:
@@ -40,44 +48,71 @@ class CodeSummarizer:
         if not self.api_key:
             return "API summary unavailable: missing OPEN_SOURCE_API_KEY/GROQ_API_KEY/HF_API_TOKEN."
 
-        if pdg_context:
-            user_prompt = (
+        # ── Pillar 1: mask secrets and build anti-hijack envelope ─────────────
+        if _SHIELD_AVAILABLE:
+            vault = SecretVault()
+            masked_code = vault.mask(source_code)
+            task_instruction = (
                 "Summarize this Python code in plain English.\n"
                 "Focus on behavior, inputs, outputs, and important conditions.\n"
-                "Do not output code.\n\n"
-                f"PDG Info:\n{pdg_context}\n\n"
-                f"Code:\n{source_code}"
+                "Do not output code."
+            )
+            # Extra context is the PDG info (structural, not user-controlled
+            # secrets, but we still neutralize tag escapes inside it).
+            extra_ctx = f"PDG Info:\n{pdg_context}" if pdg_context else ""
+            system_prompt, user_prompt = build_enveloped_prompt(
+                task_instruction, masked_code, extra_context=extra_ctx
             )
         else:
-            user_prompt = (
-                "Summarize this Python code in plain English.\n"
-                "Focus on behavior, inputs, outputs, and important conditions.\n"
-                "Do not output code.\n\n"
-                f"Code:\n{source_code}"
-            )
+            # Fallback: original prompt construction (no shield available).
+            system_prompt = None
+            if pdg_context:
+                user_prompt = (
+                    "Summarize this Python code in plain English.\n"
+                    "Focus on behavior, inputs, outputs, and important conditions.\n"
+                    "Do not output code.\n\n"
+                    f"PDG Info:\n{pdg_context}\n\n"
+                    f"Code:\n{source_code}"
+                )
+            else:
+                user_prompt = (
+                    "Summarize this Python code in plain English.\n"
+                    "Focus on behavior, inputs, outputs, and important conditions.\n"
+                    "Do not output code.\n\n"
+                    f"Code:\n{source_code}"
+                )
+        # ─────────────────────────────────────────────────────────────────────
 
-        summary = self._call_open_source_api(user_prompt)
+        summary = self._call_open_source_api(user_prompt, system_prompt=system_prompt)
         if not summary:
             return "API summary unavailable: request failed. Check API key, model, endpoint, and network access."
 
+        # Summaries are plain English descriptions – do NOT unmask them.
+        # (Placeholders, if echoed back, would be benign; real secrets must
+        # never appear in outputs.)
         summary = summary.strip()
 
         return summary
 
-    def _call_open_source_api(self, user_prompt: str) -> str | None:
+    def _call_open_source_api(
+        self, user_prompt: str, system_prompt: str | None = None
+    ) -> str | None:
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
         }
+        # Use caller-supplied system prompt (from Pillar-1 envelope) when
+        # available; otherwise fall back to the original default wording.
+        effective_system = system_prompt if system_prompt is not None else (
+            "You summarize Python code precisely. "
+            "Always respond with 1-3 sentences in plain English."
+        )
         payload = {
             "model": self.model_path,
             "messages": [
                 {
                     "role": "system",
-                    "content": (
-                        "You summarize Python code precisely. "
-                        "Always respond with 1-3 sentences in plain English."
-                    ),
+                    "content": effective_system,
                 },
                 {"role": "user", "content": user_prompt},
             ],

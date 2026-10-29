@@ -34,6 +34,14 @@ from green_computing import analyze_green_computing
 from security_scanner import SecurityAuditor
 from self_healing import SelfHealingAgent
 
+# ── Pillar 1: Input Privacy & Anti-Hijack Shield ──────────────────────────────
+try:
+    from agent_security.input_shield import SecretVault, build_enveloped_prompt
+    _SHIELD_AVAILABLE = True
+except ImportError:
+    _SHIELD_AVAILABLE = False
+# ─────────────────────────────────────────────────────────────────────────────
+
 
 @dataclass
 class OptimizationResult:
@@ -195,7 +203,8 @@ class GreenSecureOptimizer:
         if not self.api_key:
             return self._apply_deterministic_rules(source_code)
 
-        # Build diagnostic prompt
+        # Build diagnostic context strings (these come from our own analysis
+        # tools, not user-controlled, so they don't need masking).
         vuln_list = [f"- Line {f.get('line')}: {f.get('cwe')} ({f.get('category')}) - {f.get('message')}" for f in sec_info.get('findings', [])]
         vulns_str = "\n".join(vuln_list) if vuln_list else "None detected."
 
@@ -203,7 +212,43 @@ class GreenSecureOptimizer:
         if not green_recs:
             green_recs = "Maintain linear complexity."
 
-        prompt = f"""You are an expert Python compiler engineer and security specialist.
+        # ── Pillar 1: mask secrets and build anti-hijack envelope ─────────────
+        if _SHIELD_AVAILABLE:
+            vault = SecretVault()
+            masked_code = vault.mask(source_code)
+
+            # The task instruction keeps the original wording exactly.
+            # Diagnostic info (vulns, green recs) is trusted pipeline output
+            # and is placed OUTSIDE the envelope as part of the instruction.
+            task_instruction = (
+                "You are an expert Python compiler engineer and security specialist.\n"
+                "Refactor the Python code in the <untrusted_source_code> block below to fix "
+                "all security vulnerabilities and optimize computational efficiency (Green Computing).\n\n"
+                "Diagnostic Security Vulnerabilities:\n"
+                f"{vulns_str}\n\n"
+                "Green Computing Inefficiencies:\n"
+                f"{green_recs}\n\n"
+                "Guidelines:\n"
+                "1. Replace dangerous functions:\n"
+                "   - eval(), exec() -> ast.literal_eval() or safe lookup.\n"
+                "   - os.system() -> subprocess.run(..., shell=False).\n"
+                "   - Hardcoded API keys/passwords -> os.getenv('KEY_NAME').\n"
+                "2. Optimize algorithmic complexity:\n"
+                "   - Convert O(N^2) nested list loops to O(N) using set/dict lookups.\n"
+                "   - Replace in-loop string concatenation with list.append() and \"\".join().\n"
+                "   - Add memoization/caching for recursive functions where appropriate.\n"
+                "3. Preserve the exact function names, parameters, and return types.\n"
+                "4. Output ONLY valid, executable Python code inside a ```python ``` block. "
+                "No markdown conversation or explanations outside the block."
+            )
+            system_prompt, user_prompt = build_enveloped_prompt(
+                task_instruction, masked_code, extra_context=""
+            )
+        else:
+            # Fallback: original prompt construction (no shield available).
+            vault = None
+            system_prompt = "You are an automated Python optimization agent. Output ONLY valid Python code."
+            user_prompt = f"""You are an expert Python compiler engineer and security specialist.
 Refactor the following Python code to fix all security vulnerabilities and optimize computational efficiency (Green Computing).
 
 Diagnostic Security Vulnerabilities:
@@ -229,26 +274,38 @@ Source Code:
 {source_code}
 ```
 """
-        response_text = self._call_llm(prompt)
+        # ─────────────────────────────────────────────────────────────────────
+
+        response_text = self._call_llm(user_prompt, system_prompt=system_prompt)
         if response_text:
             extracted = self._extract_code_block(response_text)
             if extracted and self._can_parse(extracted):
+                # ── Pillar 1: restore real secret values in the returned code ──
+                if vault is not None:
+                    extracted = vault.unmask(extracted)
                 return extracted
 
-        # Fallback to rule-based transformer
+        # Fallback to rule-based transformer (no LLM involved; no masking needed).
         return self._apply_deterministic_rules(source_code)
 
-    def _call_llm(self, prompt: str) -> Optional[str]:
+    def _call_llm(
+        self, prompt: str, system_prompt: str | None = None
+    ) -> Optional[str]:
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
         }
+        # Use caller-supplied system prompt (from Pillar-1 envelope) when
+        # available; otherwise fall back to the original default wording.
+        effective_system = system_prompt if system_prompt is not None else (
+            "You are an automated Python optimization agent. Output ONLY valid Python code."
+        )
         payload = {
             "model": self.model_path,
             "messages": [
                 {
                     "role": "system",
-                    "content": "You are an automated Python optimization agent. Output ONLY valid Python code.",
+                    "content": effective_system,
                 },
                 {"role": "user", "content": prompt},
             ],
