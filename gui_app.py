@@ -120,6 +120,143 @@ st.markdown(
         color: #e2e8f0 !important;
         border: 1px solid #334155 !important;
     }
+
+    /* ─── Streamlit Widget Overrides (Force Consistent Dark Theme) ─── */
+    /* Buttons: Secondary button default and hover */
+    .stButton > button, 
+    button[kind="secondary"],
+    button[data-testid="baseButton-secondary"] {
+        background-color: #1e293b !important;
+        color: #f8fafc !important;
+        border: 1px solid #475569 !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        transition: all 0.2s ease-in-out !important;
+    }
+    .stButton > button:hover, 
+    button[kind="secondary"]:hover,
+    button[data-testid="baseButton-secondary"]:hover {
+        background-color: #334155 !important;
+        color: #38bdf8 !important;
+        border-color: #38bdf8 !important;
+    }
+    .stButton > button:active,
+    button[kind="secondary"]:active {
+        background-color: #0f172a !important;
+    }
+
+    /* Primary Button */
+    .stButton > button[kind="primary"],
+    button[data-testid="baseButton-primary"] {
+        background: linear-gradient(90deg, #f43f5e 0%, #fb7185 100%) !important;
+        color: #ffffff !important;
+        border: none !important;
+        border-radius: 8px !important;
+        font-weight: 700 !important;
+    }
+    .stButton > button[kind="primary"]:hover,
+    button[data-testid="baseButton-primary"]:hover {
+        background: linear-gradient(90deg, #e11d48 0%, #f43f5e 100%) !important;
+        color: #ffffff !important;
+    }
+
+    /* Expanders: Ensure dark header and visible text whether hovered or unhovered */
+    div[data-testid="stExpander"],
+    .streamlit-expander {
+        background-color: #0f172a !important;
+        border: 1px solid #334155 !important;
+        border-radius: 12px !important;
+        overflow: hidden !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3) !important;
+    }
+    div[data-testid="stExpander"] details,
+    div[data-testid="stExpander"] details summary {
+        background-color: #1e293b !important;
+        color: #f8fafc !important;
+        border: none !important;
+        border-radius: 0px !important;
+        transition: background-color 0.2s ease !important;
+    }
+    div[data-testid="stExpander"] details summary:hover {
+        background-color: #273549 !important;
+        color: #38bdf8 !important;
+    }
+    div[data-testid="stExpander"] details summary p,
+    div[data-testid="stExpander"] details summary span,
+    div[data-testid="stExpander"] details summary svg {
+        color: #f8fafc !important;
+        fill: #f8fafc !important;
+    }
+    div[data-testid="stExpander"] details summary:hover p,
+    div[data-testid="stExpander"] details summary:hover span {
+        color: #38bdf8 !important;
+    }
+    div[data-testid="stExpander"] details summary:hover svg {
+        fill: #38bdf8 !important;
+    }
+    div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] {
+        background-color: #0b1120 !important;
+        color: #cbd5e1 !important;
+        border-top: 1px solid #334155 !important;
+        padding: 1rem !important;
+    }
+
+    /* File Uploader: Dropzone styling */
+    div[data-testid="stFileUploader"] {
+        background: transparent !important;
+    }
+    div[data-testid="stFileUploader"] section[data-testid="stFileUploadDropzone"],
+    div[data-testid="stFileUploader"] section {
+        background-color: #0f172a !important;
+        border: 1px dashed #475569 !important;
+        border-radius: 10px !important;
+        color: #cbd5e1 !important;
+        transition: border-color 0.2s ease !important;
+    }
+    div[data-testid="stFileUploader"] section:hover {
+        border-color: #38bdf8 !important;
+        background-color: #162032 !important;
+    }
+    div[data-testid="stFileUploader"] section button {
+        background-color: #1e293b !important;
+        color: #f8fafc !important;
+        border: 1px solid #475569 !important;
+        border-radius: 6px !important;
+    }
+    div[data-testid="stFileUploader"] section button:hover {
+        background-color: #334155 !important;
+        color: #38bdf8 !important;
+        border-color: #38bdf8 !important;
+    }
+    div[data-testid="stFileUploader"] span,
+    div[data-testid="stFileUploader"] small,
+    div[data-testid="stFileUploader"] p {
+        color: #94a3b8 !important;
+    }
+
+    /* Selectbox & Popovers */
+    div[data-baseweb="select"] > div {
+        background-color: #0f172a !important;
+        border-color: #334155 !important;
+        color: #f8fafc !important;
+    }
+    div[data-baseweb="select"] * {
+        color: #f8fafc !important;
+    }
+    div[data-baseweb="popover"],
+    ul[role="listbox"] {
+        background-color: #0f172a !important;
+        border: 1px solid #334155 !important;
+    }
+    li[role="option"] {
+        background-color: #0f172a !important;
+        color: #f8fafc !important;
+    }
+    li[role="option"]:hover,
+    li[aria-selected="true"] {
+        background-color: #1e293b !important;
+        color: #38bdf8 !important;
+    }
     .heal-patch-card {
         background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
         border: 1px solid #334155;
