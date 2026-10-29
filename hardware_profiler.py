@@ -36,6 +36,14 @@ except ImportError:
     PROFILER_TIMEOUT_SECONDS = 2.0
     PROFILER_MEMORY_LIMIT_MB = 50
 
+# ── Polyglot C++ Profiler Integration ─────────────────────────────────────────
+try:
+    from polyglot.language_detector import detect_language, SupportedLanguage
+    from polyglot.cpp_profiler import CppProfiler
+    _POLYGLOT_CPP_AVAILABLE = True
+except ImportError:
+    _POLYGLOT_CPP_AVAILABLE = False
+
 
 CARBON_INTENSITY_KG_PER_KWH = 0.475
 DEFAULT_TDP_WATTS = 45.0
@@ -118,18 +126,32 @@ class HardwareProfiler:
 
         return result, hardware_metrics
 
-    def profile_code_snippet(self, source_code: str, global_scope: Optional[dict] = None) -> Dict:
+    def profile_code_snippet(self, source_code: str, global_scope: Optional[dict] = None, language: Optional[str] = None) -> Dict:
         """
-        Executes a Python code snippet inside an isolated subprocess sandbox.
+        Executes a code snippet inside an isolated subprocess sandbox.
+        Supports Python and C++ (via CppProfiler).
         NEVER calls exec() on user code in the host process.
 
         Pillar-3 hardening:
-          1. AST Gatekeeper: iterative traversal blocks forbidden modules/calls/dunders.
-          2. Isolated Subprocess: executes with `python -I` in a temporary clean directory.
+          1. AST Gatekeeper: iterative traversal blocks forbidden modules/calls/dunders (Python)
+             or CppSecurityAuditor blocks critical CWEs/system calls (C++).
+          2. Isolated Subprocess: executes with `python -I` or compiled g++ binary in a clean sandbox.
           3. Environment sanitization: all sensitive API keys/tokens stripped.
           4. Process-tree kill on timeout (PROFILER_TIMEOUT_SECONDS).
           5. Memory limit monitoring (PROFILER_MEMORY_LIMIT_MB).
         """
+        # ── Polyglot Routing Check ───────────────────────────────────────────
+        if _POLYGLOT_CPP_AVAILABLE:
+            is_cpp = False
+            if language:
+                is_cpp = str(language).lower() in ("cpp", "c++", "cxx")
+            else:
+                detected = detect_language(source_code)
+                is_cpp = (detected == SupportedLanguage.CPP)
+
+            if is_cpp:
+                cpp_prof = CppProfiler(tdp_watts=self.tdp_watts)
+                return cpp_prof.profile(source_code)
         # ── 1. AST Gatekeeper Pre-Execution Inspection ───────────────────────
         if _GUARD_AVAILABLE:
             report = scan(source_code)
@@ -432,10 +454,10 @@ def measure_hardware(target_func: Callable, *args, **kwargs) -> Tuple[Any, Dict]
     return profiler.profile_execution(target_func, *args, **kwargs)
 
 
-def profile_code(source_code: str) -> Dict:
+def profile_code(source_code: str, language: Optional[str] = None) -> Dict:
     """Helper to profile arbitrary source code snippet in sandbox."""
     profiler = HardwareProfiler()
-    return profiler.profile_code_snippet(source_code)
+    return profiler.profile_code_snippet(source_code, language=language)
 
 
 if __name__ == "__main__":

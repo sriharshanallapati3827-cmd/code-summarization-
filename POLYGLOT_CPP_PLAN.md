@@ -94,9 +94,10 @@ The core objective is to preserve the existing **5-Agent workflow**, **4-Pillar 
 - [x] Emit structured `repair_details` before/after records for C++ syntax repairs in the UI.
 
 ### Phase 5: C++ Execution & Profiler Engine
-- [ ] Update `hardware_profiler.py` with dual-mode C++ handling:
-  - **Execution Mode (Compiler Present):** Check if `g++` or `clang++` is available on system `PATH`. If present, compile with safety flags (`-O2 -Wall`) into temp directory and run in sandboxed subprocess with memory/time watchdog.
-  - **Graceful Static Degradation (No Compiler):** If compiler is not installed, estimate algorithmic complexity, loop depth, and theoretical eco-score directly from the C++ PDG without execution errors.
+- [x] Update `hardware_profiler.py` and create `polyglot/cpp_profiler.py` with dual-mode C++ handling:
+  - **Execution Mode (Compiler Present):** Auto-discovers `g++` or `clang++` on system `PATH`. Compiles with safety flags (`-O2 -Wall -static -std=c++17`) into temp directory and executes in sandboxed subprocess with `psutil` memory watchdog and timeout watchdog.
+  - **Pre-Execution Gatekeeper:** Scans with `CppSecurityAuditor` to block execution of critical CWE-78 command injection (`system()`, `popen()`).
+  - **Graceful Static Degradation (No Compiler):** If compiler is not installed or static mode is forced, estimates algorithmic complexity, loop depth, and theoretical eco-score directly from the C++ Tree-sitter AST without execution errors.
 
 ### Phase 6: UI & Dashboard Integration
 - [ ] Add Language toggle selector (`Python` / `C++`) in Streamlit sidebar.
@@ -117,7 +118,7 @@ The core objective is to preserve the existing **5-Agent workflow**, **4-Pillar 
 | **2** | C++ PDG & Data Flow Extractor | ✅ Complete | `cpp_pdg_extractor.py`, vis.js normalization |
 | **3** | C++ Security Auditor (CWEs) | ✅ Complete | AST/Tree-sitter queries for CWE-120, CWE-119, CWE-78 |
 | **4** | C++ Syntax Self-Healer | ✅ Complete | Semicolon `;` and brace `{}` autonomous repair |
-| **5** | C++ Profiler & Sandbox | ⬜ Not Started | `g++` compilation harness + static complexity fallback |
+| **5** | C++ Profiler & Sandbox | ✅ Complete | Dual-mode `cpp_profiler.py` + `HardwareProfiler` polyglot routing |
 | **6** | UI & Polyglot Presets | ⬜ Not Started | Streamlit language toggle, C++ benchmarks |
 
 ---
