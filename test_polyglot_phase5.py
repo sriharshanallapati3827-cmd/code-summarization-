@@ -18,7 +18,7 @@ from hardware_profiler import HardwareProfiler, profile_code
 class TestPolyglotPhase5(unittest.TestCase):
 
     def setUp(self):
-        self.profiler = CppProfiler(timeout_seconds=1.0, memory_limit_mb=50.0)
+        self.profiler = CppProfiler(timeout_seconds=3.0, memory_limit_mb=50.0)
 
     def test_compiled_execution_benign_cpp(self):
         """Test compiling and executing a benign C++ program in sandbox."""

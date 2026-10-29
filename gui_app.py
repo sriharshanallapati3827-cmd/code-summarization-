@@ -431,8 +431,8 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Preset Samples
-SAMPLE_CODES = {
+# Preset Samples: Python
+PYTHON_SAMPLE_CODES = {
     "Vulnerable & Inefficient (Full Demo)": '''import os
 
 def process_transaction(user_id, token, records):
@@ -477,10 +477,87 @@ def process_transaction(user_id, token, records):
 '''
 }
 
+# Preset Samples: C++
+CPP_SAMPLE_CODES = {
+    "C++ Buffer Overflow & Insecure system() Demo": '''#include <iostream>
+#include <cstring>
+#include <cstdlib>
+
+void process_user_data(const char* input_str) {
+    char buffer[16];
+    // CWE-120: Buffer Overflow via unbounded strcpy
+    strcpy(buffer, input_str);
+    
+    // CWE-78: Insecure Shell Command Execution
+    system("echo Audit completed for transaction");
+}
+
+int main() {
+    process_user_data("this_string_is_much_longer_than_sixteen_characters");
+    return 0;
+}
+''',
+    "C++ Broken Syntax / Missing Semicolons (Self-Healing Demo)": '''#include <vector>
+
+int calculate_metrics(int factor, int count) {
+    int total = 0
+    for (int i = 0; i < count; i++) {
+        if (i % 2 == 0) {
+            total += i * factor
+        }
+    return total;
+}
+''',
+    "C++ O(N²) Nested Loop Complexity Demo": '''#include <iostream>
+#include <vector>
+
+int check_duplicates(const std::vector<int>& list_a, const std::vector<int>& list_b) {
+    int duplicates = 0;
+    // O(N^2) nested loop comparison
+    for (size_t i = 0; i < list_a.size(); ++i) {
+        for (size_t j = 0; j < list_b.size(); ++j) {
+            if (list_a[i] == list_b[j]) {
+                duplicates++;
+            }
+        }
+    }
+    return duplicates;
+}
+
+int main() {
+    std::vector<int> a = {1, 2, 3, 4, 5};
+    std::vector<int> b = {3, 4, 5, 6, 7};
+    std::cout << "Duplicates: " << check_duplicates(a, b) << std::endl;
+    return 0;
+}
+''',
+    "C++ Clean RAII & Memory-Safe Logic": '''#include <iostream>
+#include <vector>
+#include <numeric>
+
+double calculate_average(const std::vector<double>& scores) {
+    if (scores.empty()) {
+        return 0.0;
+    }
+    double sum = std::accumulate(scores.begin(), scores.end(), 0.0);
+    return sum / static_cast<double>(scores.size());
+}
+
+int main() {
+    std::vector<double> scores = {92.5, 88.0, 95.5, 78.0};
+    std::cout << "Class average: " << calculate_average(scores) << std::endl;
+    return 0;
+}
+'''
+}
+
 # Sidebar Controls
 with st.sidebar:
     st.subheader("⚙️ Control Panel")
-    selected_sample = st.selectbox("Choose a Benchmark Sample:", list(SAMPLE_CODES.keys()))
+    selected_language = st.radio("Target Programming Language:", ["Python", "C++"], horizontal=True)
+
+    sample_dict = PYTHON_SAMPLE_CODES if selected_language == "Python" else CPP_SAMPLE_CODES
+    selected_sample = st.selectbox("Choose a Benchmark Sample:", list(sample_dict.keys()))
 
     st.markdown("---")
     st.markdown("### 🤖 Multi-Agent Engine")
@@ -502,8 +579,8 @@ col_code, col_act = st.columns([2.5, 1])
 
 with col_code:
     code_input = st.text_area(
-        "Python Source Code to Analyze:",
-        value=SAMPLE_CODES[selected_sample],
+        f"{selected_language} Source Code to Analyze:",
+        value=sample_dict[selected_sample],
         height=280,
     )
 
@@ -511,7 +588,7 @@ with col_act:
     st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
     run_agentic = st.button("🚀 Run 5-Agent Intelligence Pipeline", use_container_width=True, type="primary")
     run_optimizer = st.button("⚡ Run Green & Secure Optimizer", use_container_width=True)
-    uploaded_file = st.file_uploader("Or Upload .py Script", type=["py", "txt"])
+    uploaded_file = st.file_uploader(f"Or Upload {selected_language} Script", type=["py", "cpp", "cc", "cxx", "h", "hpp", "txt"])
 
 # Handle file upload override
 if uploaded_file is not None:
@@ -532,12 +609,13 @@ if "opt_result" not in st.session_state:
 # Trigger Pipeline Execution
 if run_agentic:
     if not code_input.strip():
-        st.warning("Please provide Python code to analyze.")
+        st.warning(f"Please provide {selected_language} code to analyze.")
     else:
-        with st.spinner("🤖 5 Specialized Agents Collaborating on Code Intelligence..."):
+        with st.spinner(f"🤖 5 Specialized Agents Collaborating on {selected_language} Intelligence..."):
             try:
                 controller = AgentController()
-                ctx = controller.run_workflow(code_input)
+                lang_code = "cpp" if selected_language == "C++" else "python"
+                ctx = controller.run_workflow(code_input, language=lang_code)
                 st.session_state.agent_context = ctx
                 st.success("Multi-Agent Intelligence Synthesis Complete!")
             except Exception as e:
@@ -608,7 +686,7 @@ if ctx is not None or opt is not None:
 
                 st.warning(
                     f"🩹 **Self-Healing Guard Triggered:** Autonomously repaired **{len(text_repairs)}** syntax defect(s) across **{lines_str}**. "
-                    "Input code successfully normalized to 100% AST-compliant Python."
+                    "Input code successfully normalized to 100% AST-compliant representation."
                 )
 
                 with st.expander("🔍 View Self-Healing Patch Details & State Transitions", expanded=True):
@@ -673,8 +751,9 @@ if ctx is not None or opt is not None:
                 st.markdown(ctx.developer_walkthrough)
 
             with doc_col2:
-                st.markdown("#### 3. Production Docstrings (Google/Sphinx)")
-                st.code(ctx.docstrings, language="python")
+                doc_title = "3. Production Docstrings (Doxygen /** ... */)" if getattr(ctx, 'language', 'python') == 'cpp' else "3. Production Docstrings (Google/Sphinx)"
+                st.markdown(f"#### {doc_title}")
+                st.code(ctx.docstrings, language="cpp" if getattr(ctx, 'language', 'python') == 'cpp' else "python")
 
             st.markdown("---")
             st.markdown("### 🔬 Live Cognitive Thought Trace")
@@ -784,6 +863,9 @@ if ctx is not None or opt is not None:
         # Top row: Hardware real-time metrics
         if hw:
             st.markdown("#### ⚡ Real-Time Dynamic Hardware Performance")
+            exec_mode_badge = hw.get('execution_mode', 'standard')
+            backend_badge = hw.get('profiler_backend', 'sandbox')
+            st.caption(f"**Execution Engine:** `{backend_badge}` &bull; **Mode:** `{exec_mode_badge}`")
             h1, h2, h3, h4 = st.columns(4)
             h1.metric("Execution Latency", f"{hw.get('latency_ms', 0):.2f} ms")
             h2.metric("CPU Execution Time", f"{hw.get('cpu_time_ms', 0):.2f} ms", f"{hw.get('cpu_percent', 0)}% CPU")
@@ -820,8 +902,16 @@ if ctx is not None or opt is not None:
         st.markdown("### 🌳 Abstract Syntax Tree (AST) Hierarchy")
         ast_text = ctx.ast_context if ctx else ""
         if not ast_text:
-            from ast_extractor import extract_ast_context
-            ast_text = extract_ast_context(code_input)
+            if selected_language == "C++":
+                try:
+                    from polyglot.parser_factory import ParserFactory, SupportedLanguage
+                    parsed = ParserFactory.parse(code_input, language=SupportedLanguage.CPP)
+                    ast_text = AgentController._format_cpp_ast(parsed.root_node) if parsed.root_node else "C++ AST"
+                except Exception as e:
+                    ast_text = f"C++ AST extraction failed: {e}"
+            else:
+                from ast_extractor import extract_ast_context
+                ast_text = extract_ast_context(code_input)
         st.code(ast_text, language="text")
 
     # ─────────────────────────────────────────────────────────────

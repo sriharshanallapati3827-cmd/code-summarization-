@@ -100,13 +100,15 @@ The core objective is to preserve the existing **5-Agent workflow**, **4-Pillar 
   - **Graceful Static Degradation (No Compiler):** If compiler is not installed or static mode is forced, estimates algorithmic complexity, loop depth, and theoretical eco-score directly from the C++ Tree-sitter AST without execution errors.
 
 ### Phase 6: UI & Dashboard Integration
-- [ ] Add Language toggle selector (`Python` / `C++`) in Streamlit sidebar.
-- [ ] Add C++ benchmark samples to sidebar presets:
+- [x] Add Language toggle selector (`Python` / `C++`) in Streamlit sidebar.
+- [x] Add C++ benchmark samples to sidebar presets:
   - *C++ Buffer Overflow & Insecure `system()` Demo*
   - *C++ Broken Syntax / Missing Semicolons (Self-Healing Demo)*
   - *C++ O(N²) Nested Loop Complexity Demo*
-- [ ] Ensure docstring generator outputs Doxygen / Javadoc style comments (`/** ... */`) for C++.
-- [ ] Run full polyglot regression tests.
+  - *C++ Clean RAII & Memory-Safe Logic*
+- [x] Ensure docstring generator outputs Doxygen / Javadoc style comments (`/** ... */`) for C++.
+- [x] Route all 5 agents through polyglot execution in `agent_controller.py` and `main.py`.
+- [x] Run full polyglot regression tests across all 6 phases (27 unit tests + 7 pytest security tests).
 
 ---
 
@@ -119,7 +121,7 @@ The core objective is to preserve the existing **5-Agent workflow**, **4-Pillar 
 | **3** | C++ Security Auditor (CWEs) | ✅ Complete | AST/Tree-sitter queries for CWE-120, CWE-119, CWE-78 |
 | **4** | C++ Syntax Self-Healer | ✅ Complete | Semicolon `;` and brace `{}` autonomous repair |
 | **5** | C++ Profiler & Sandbox | ✅ Complete | Dual-mode `cpp_profiler.py` + `HardwareProfiler` polyglot routing |
-| **6** | UI & Polyglot Presets | ⬜ Not Started | Streamlit language toggle, C++ benchmarks |
+| **6** | UI & Polyglot Presets | ✅ Complete | Streamlit language toggle, C++ benchmarks, Doxygen docstrings |
 
 ---
 

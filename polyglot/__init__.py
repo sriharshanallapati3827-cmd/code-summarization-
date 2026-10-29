@@ -9,6 +9,7 @@ from polyglot.cpp_pdg_extractor import extract_cpp_pdg_graph, extract_cpp_pdg_co
 from polyglot.cpp_security_auditor import CppSecurityAuditor, DANGEROUS_CALLS_MAP
 from polyglot.cpp_self_healing import CppSelfHealingAgent, heal_cpp_code
 from polyglot.cpp_profiler import CppProfiler, profile_cpp_code
+from polyglot.cpp_samples import CPP_SAMPLE_CODES
 
 __all__ = [
     "detect_language",
@@ -24,4 +25,5 @@ __all__ = [
     "heal_cpp_code",
     "CppProfiler",
     "profile_cpp_code",
+    "CPP_SAMPLE_CODES",
 ]

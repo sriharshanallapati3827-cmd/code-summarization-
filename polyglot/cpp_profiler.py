@@ -209,6 +209,11 @@ class CppProfiler:
                     text=True,
                     shell=False,
                 )
+            except OSError:
+                # Graceful degradation if OS application control / security policy prevents executing temp binary
+                fallback = self._estimate_static_complexity(source_code)
+                fallback['profiler_backend'] = f"{compiler_name} restricted by OS policy -> static degradation fallback"
+                return fallback
             except Exception as exc:
                 return self._build_error_metrics(
                     f"Subprocess binary launch failed: {exc}",

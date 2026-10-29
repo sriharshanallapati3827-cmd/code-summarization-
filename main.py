@@ -12,7 +12,30 @@ from agent_controller import AgentController
 from optimizer_agent import optimize_code
 
 
-def run_pipeline(source_code: str, model_path: str | None = None) -> dict:
+def run_pipeline(source_code: str, model_path: str | None = None, language: str | None = None) -> dict:
+    try:
+        from polyglot.language_detector import detect_language, SupportedLanguage
+        is_cpp = (str(language).lower() in ("cpp", "c++")) if language else (detect_language(source_code) == SupportedLanguage.CPP)
+    except ImportError:
+        is_cpp = False
+
+    if is_cpp:
+        controller = AgentController(model_path=model_path)
+        ctx = controller.run_workflow(source_code, language="cpp")
+        return {
+            "raw_code": ctx.raw_code,
+            "clean_code": ctx.clean_code,
+            "healing_report": ctx.healing_report,
+            "ast_context": ctx.ast_context,
+            "pdg_context": ctx.pdg_context,
+            "pdg_graph": ctx.pdg_graph,
+            "summary": ctx.executive_summary,
+            "model_path": model_path or "qwen/qwen3.8-27b",
+            "green_profile": ctx.green_profile,
+            "security_profile": ctx.security_profile,
+            "hardware_profile": ctx.hardware_profile,
+        }
+
     start_time = time.perf_counter()
 
     # Stage 1: Self-Healing Guard (Phase 2)
@@ -87,6 +110,13 @@ def main():
         action="store_true",
         help="Run Autonomous Green & Secure Optimizer with closed-loop verification.",
     )
+    parser.add_argument(
+        "--language",
+        type=str,
+        default=None,
+        choices=["python", "cpp", "c++"],
+        help="Target programming language (python or cpp). Auto-detected if omitted.",
+    )
     
     args = parser.parse_args()
     
@@ -146,7 +176,7 @@ def calculate_discount(price, is_member):
     if args.agentic:
         print("\n================ MULTI-AGENT COLLABORATION ENGINE ================")
         controller = AgentController(model_path=args.model_path)
-        ctx = controller.run_workflow(source_code)
+        ctx = controller.run_workflow(source_code, language=args.language)
 
         print("\n--- Live Cognitive Thought Trace ---")
         for event in ctx.thought_trace:
@@ -162,7 +192,7 @@ def calculate_discount(price, is_member):
         print(ctx.docstrings)
         return
 
-    result = run_pipeline(source_code, model_path=args.model_path)
+    result = run_pipeline(source_code, model_path=args.model_path, language=args.language)
 
     # Self-Healing Status
     healing = result.get("healing_report", {})
