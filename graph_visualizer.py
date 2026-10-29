@@ -171,6 +171,8 @@ def generate_pdg_html(
 
     nodes_json = json.dumps(vis_nodes)
     edges_json = json.dumps(vis_edges)
+    safe_nodes_json = nodes_json.replace("</script>", "<\\/script>")
+    safe_edges_json = edges_json.replace("</script>", "<\\/script>")
 
     html_template = f"""
 <!DOCTYPE html>
@@ -345,8 +347,18 @@ def generate_pdg_html(
   </div>
 
   <script type="text/javascript">
-    const rawNodes = {nodes_json};
-    const rawEdges = {edges_json};
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    const rawNodes = {safe_nodes_json};
+    const rawEdges = {safe_edges_json};
 
     const container = document.getElementById("pdg-container");
     const nodeDetails = document.getElementById("node-details");
@@ -407,7 +419,7 @@ def generate_pdg_html(
             <button onclick="document.getElementById('node-details').style.display='none'" style="background:none; border:none; color:#94a3b8; cursor:pointer; font-size:14px;">&times;</button>
           </div>
           <div style="font-size:11px; color:#cbd5e1; line-height:1.4; word-break:break-word;">
-            ${{node.title.replace(/\\n/g, "<br/>")}}
+            ${{escapeHtml(node.title).replace(/\\n/g, "<br/>")}}
           </div>
         `;
       }}

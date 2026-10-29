@@ -2,6 +2,11 @@ import ast
 import html
 from pathlib import Path
 
+try:
+    from agent_security.input_limits import safe_parse
+except ImportError:
+    safe_parse = ast.parse
+
 
 CARBON_INTENSITY_KG_PER_KWH = 0.475
 DEFAULT_DEVICE_WATTS = 45.0
@@ -132,7 +137,7 @@ def analyze_green_computing(
     recommendations = []
 
     try:
-        tree = ast.parse(source_code)
+        tree = safe_parse(source_code)
     except SyntaxError as exc:
         return {
             "status": "invalid",

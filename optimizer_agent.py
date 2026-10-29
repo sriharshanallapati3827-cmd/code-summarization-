@@ -34,9 +34,16 @@ from green_computing import analyze_green_computing
 from security_scanner import SecurityAuditor
 from self_healing import SelfHealingAgent
 
+# ── Pillar 3B: Safe Parsing ──────────────────────────────────────────────────
+try:
+    from agent_security.input_limits import safe_parse
+except ImportError:
+    safe_parse = ast.parse
+# ─────────────────────────────────────────────────────────────────────────────
+
 # ── Pillar 3F: Optimizer Output AST Firewall ──────────────────────────────────
 try:
-    from agent_security.optimizer_firewall import audit_optimizer_output
+    from agent_security.optimizer_firewall import inspect_candidate, audit_optimizer_output
     _FIREWALL_AVAILABLE = True
 except ImportError:
     _FIREWALL_AVAILABLE = False
@@ -67,6 +74,8 @@ class OptimizationResult:
     algorithmic_improvements: List[str] = field(default_factory=list)
     verified: bool = False
     verification_notes: str = ""
+    firewall_passed: bool = True
+    firewall_violations: List[str] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -84,6 +93,8 @@ class OptimizationResult:
             "algorithmic_improvements": self.algorithmic_improvements,
             "verified": self.verified,
             "verification_notes": self.verification_notes,
+            "firewall_passed": self.firewall_passed,
+            "firewall_violations": self.firewall_violations,
         }
 
 
@@ -150,16 +161,35 @@ class GreenSecureOptimizer:
         healed_report = self.self_healer.heal(candidate_code)
         candidate_code = healed_report.get('clean_code', candidate_code)
 
+        # Firewall audit on candidate code
+        firewall_passed = True
+        firewall_violations = []
+
+        if _FIREWALL_AVAILABLE:
+            is_clean, violations = inspect_candidate(candidate_code, original_code=source_code)
+            if not is_clean:
+                firewall_violations.extend(violations)
+                # Log thought-trace event
+                print(f"[ThoughtTrace] FIREWALL: blocked candidate ? {'; '.join(violations)}")
+                # Fall back to deterministic rules
+                candidate_code = self._apply_deterministic_rules(source_code)
+                fb_clean, fb_violations = inspect_candidate(candidate_code, original_code=source_code)
+                if not fb_clean:
+                    # Both failed: revert to original source code
+                    print(f"[ThoughtTrace] FIREWALL: blocked fallback candidate ? {'; '.join(fb_violations)}")
+                    candidate_code = source_code
+                    firewall_passed = False
+                    firewall_violations.extend(fb_violations)
+
         # Check if candidate parses
         is_syntax_valid = False
         try:
-            ast.parse(candidate_code)
+            safe_parse(candidate_code)
             is_syntax_valid = True
-        except Exception as e:
-            # If candidate failed AST, fall back to pure rule-based transformation
+        except Exception:
             candidate_code = self._apply_deterministic_rules(source_code)
             try:
-                ast.parse(candidate_code)
+                safe_parse(candidate_code)
                 is_syntax_valid = True
             except Exception:
                 is_syntax_valid = False
@@ -214,7 +244,9 @@ class GreenSecureOptimizer:
             remaining_vulnerabilities=new_cwes,
             algorithmic_improvements=algo_improvements,
             verified=verified,
-            verification_notes=" ".join(notes)
+            verification_notes=" ".join(notes),
+            firewall_passed=firewall_passed,
+            firewall_violations=firewall_violations,
         )
 
         # ── Pillar 2: advance DFA to OPTIMIZED state ─────────────────────────
@@ -367,7 +399,7 @@ Source Code:
 
     def _can_parse(self, code: str) -> bool:
         try:
-            ast.parse(code)
+            safe_parse(code)
             return True
         except Exception:
             return False

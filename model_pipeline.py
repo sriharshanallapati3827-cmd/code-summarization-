@@ -195,7 +195,7 @@ class CodeSummarizer:
     @staticmethod
     def _rule_based_summary(source_code: str) -> str:
         try:
-            tree = ast.parse(source_code)
+            tree = safe_parse(source_code)
         except Exception:
             return "Summarizes the provided code logic."
 

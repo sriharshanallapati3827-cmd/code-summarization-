@@ -34,6 +34,9 @@ from agent_security.input_shield import SecretVault, build_enveloped_prompt
 from agent_security.regex_timeout import timed_search
 from agent_security.exec_guard import check_exec_safety
 from agent_security.nesting_guard import check_nesting_depth
+from agent_security.workflow_dfa import WorkflowDFA, DFAState, WorkflowViolation
+from agent_security.optimizer_firewall import inspect_candidate
+from agent_security.input_limits import check_source, safe_parse
 
 PASS = "\033[32mPASS\033[0m"
 FAIL = "\033[31mFAIL\033[0m"
@@ -280,6 +283,89 @@ record_result(
 
 
 # =====================================================================
+# Control Test: Benign Baseline Code Verification
+# Target: All security layers on safe, clean code
+# Defence: False Positive Prevention
+# =====================================================================
+print("\n[Control Test] Benign Code Baseline (Zero False-Positives)")
+benign_code = """
+def calculate_sum(numbers):
+    \"\"\"Calculates sum of a list of numbers.\"\"\"
+    total = 0
+    for n in numbers:
+        total += n
+    return total
+
+result = calculate_sum([1, 2, 3, 4, 5])
+"""
+check_source(benign_code)
+parsed_tree = safe_parse(benign_code)
+vault = SecretVault()
+masked_benign = vault.mask(benign_code)
+gatekeeper_res = check_exec_safety(benign_code)
+prof_res = profiler.profile_code_snippet(benign_code)
+fw_report = inspect_candidate(benign_code, benign_code)
+
+record_result(
+    "Control.1 Benign code passes input limits, AST gatekeeper, and profiler without blocking",
+    parsed_tree is not None and gatekeeper_res[0] and prof_res.get("status") != "blocked" and not prof_res.get("blocked", False),
+    f"gatekeeper={gatekeeper_res[0]}, profiler_status={prof_res.get('status')}"
+)
+record_result(
+    "Control.2 Benign code passes SecretVault with 0 false secret redactions and 100% firewall approval",
+    vault.count == 0 and masked_benign == benign_code and fw_report[0],
+    f"vault_count={vault.count}, fw_safe={fw_report[0]}"
+)
+
+# =====================================================================
+# DFA Test: Workflow State Machine Transitions & Trap Enforcement
+# Target: agent_security/workflow_dfa.py -> WorkflowDFA
+# Defence: Automata State Machine Enforcement (Pillar 2)
+# =====================================================================
+print("\n[DFA Test] Automata Workflow Guard (State Machine & Absorbing Trap)")
+dfa = WorkflowDFA()
+init_ok = (dfa.state == DFAState.START)
+
+dfa.step("validate")
+after_val = (dfa.state == DFAState.HEALED)
+dfa.step("parse")
+after_parse = (dfa.state == DFAState.AST_VERIFIED)
+dfa.step("graph")
+after_graph = (dfa.state == DFAState.PDG_BUILT)
+dfa.step("audit")
+after_audit = (dfa.state == DFAState.SECURITY_AUDITED)
+dfa.step("optimize")
+after_opt = (dfa.state == DFAState.OPTIMIZED)
+
+legal_sequence_ok = init_ok and after_val and after_parse and after_graph and after_audit and after_opt
+
+dfa_bad = WorkflowDFA()
+violation_raised = False
+try:
+    dfa_bad.require("optimize")
+except WorkflowViolation:
+    violation_raised = True
+
+dfa_bad.step("optimize")
+is_trapped_now = (dfa_bad.is_trapped and dfa_bad.state == DFAState.TRAP)
+
+# Verify TRAP is absorbing (no exit possible)
+dfa_bad.step("validate")
+trap_absorbing = (dfa_bad.state == DFAState.TRAP and dfa_bad.is_trapped)
+
+record_result(
+    "DFA.1 Legal workflow steps transition sequentially across states to OPTIMIZED",
+    legal_sequence_ok,
+    f"Final state: {dfa.state.name}"
+)
+record_result(
+    "DFA.2 Illegal transition raises WorkflowViolation and locks state machine in absorbing TRAP",
+    violation_raised and is_trapped_now and trap_absorbing,
+    f"Violation={violation_raised}, Absorbing={trap_absorbing}, State={dfa_bad.state.name}"
+)
+
+
+# =====================================================================
 # Red-Team Suite Summary & Pytest Entrypoints
 # =====================================================================
 print("\n" + "=" * 70)
@@ -318,6 +404,37 @@ def test_attack4_memory_and_timeout():
 def test_attack5_redos_protection():
     res = timed_search(r"^(a+)+$", "a" * 28 + "!", timeout=0.2)
     assert res is None
+
+def test_control_baseline():
+    code = "def add(a, b): return a + b"
+    check_source(code)
+    tree = safe_parse(code)
+    assert tree is not None
+    assert check_exec_safety(code)[0] is True
+    p = HardwareProfiler()
+    res = p.profile_code_snippet(code)
+    assert not res.get("blocked", False)
+    fw_safe, _ = inspect_candidate(code, code)
+    assert fw_safe is True
+
+def test_dfa_sequence_and_trap():
+    dfa = WorkflowDFA()
+    dfa.step("validate")
+    dfa.step("parse")
+    dfa.step("graph")
+    dfa.step("audit")
+    dfa.step("optimize")
+    assert dfa.state == DFAState.OPTIMIZED
+    
+    bad_dfa = WorkflowDFA()
+    try:
+        bad_dfa.require("optimize")
+        assert False, "Should have raised WorkflowViolation"
+    except WorkflowViolation:
+        pass
+    bad_dfa.step("optimize")
+    assert bad_dfa.is_trapped is True
+    assert bad_dfa.state == DFAState.TRAP
 
 
 if __name__ == "__main__":

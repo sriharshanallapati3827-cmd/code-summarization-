@@ -191,8 +191,8 @@ def fetch():
 is_clean, violations = audit_optimizer_output(unapproved_module)
 check("3F.4 unapproved new module rejected", not is_clean and any("urllib" in v for v in violations))
 
-# If module was already in original code, it should be allowed
-is_clean_orig, _ = audit_optimizer_output(unapproved_module, original_source="import urllib.request\n# existing")
+# If module and URL were already in original code, they should be allowed
+is_clean_orig, _ = audit_optimizer_output(unapproved_module, original_source="import urllib.request\n# existing http://example.com")
 check("3F.5 module already in original source is allowed", is_clean_orig)
 
 

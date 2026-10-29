@@ -1,3 +1,13 @@
+def _get_optimizer_dfa():
+    try:
+        from agent_security.workflow_dfa import WorkflowDFA
+        dfa = WorkflowDFA()
+        for ev in ["validate", "parse", "graph", "audit"]:
+            dfa.step(ev)
+        return dfa
+    except Exception:
+        return None
+
 """
 gui_app.py - Agentic AI Code Intelligence & Security Lab (Streamlit UI)
 ======================================================================
@@ -246,7 +256,7 @@ if run_optimizer:
     else:
         with st.spinner("⚡ Autonomous Optimizer Refactoring & Verifying Code..."):
             try:
-                res = optimize_code(code_input)
+                res = optimize_code(code_input, dfa=_get_optimizer_dfa())
                 st.session_state.opt_result = res
                 st.success("Autonomous Optimization & Closed-Loop Verification Finished!")
             except Exception as e:
@@ -453,7 +463,7 @@ if ctx is not None or opt is not None:
             st.info("Click **⚡ Run Green & Secure Optimizer** to refactor, secure, and verify your code.")
             if st.button("Optimize Current Code Now"):
                 with st.spinner("Optimizing..."):
-                    opt = optimize_code(code_input)
+                    opt = optimize_code(code_input, dfa=_get_optimizer_dfa())
                     st.session_state.opt_result = opt
                     st.rerun()
         else:

@@ -1,6 +1,11 @@
 import ast
 import re
 
+try:
+    from agent_security.input_limits import safe_parse
+except ImportError:
+    safe_parse = ast.parse
+
 class PDGExtractor(ast.NodeVisitor):
     def __init__(self):
         # We will store dependencies as a list of strings to feed the NLP model
@@ -99,7 +104,7 @@ def extract_pdg_context(source_code: str) -> str:
     capturing Control Flow and Data Flow dependencies.
     """
     try:
-        tree = ast.parse(source_code)
+        tree = safe_parse(source_code)
         extractor = PDGExtractor()
         extractor.visit(tree)
         
@@ -121,7 +126,7 @@ def extract_pdg_graph(source_code: str) -> dict:
     Edges point from the dependency source to the dependent target.
     """
     try:
-        tree = ast.parse(source_code)
+        tree = safe_parse(source_code)
         extractor = PDGExtractor()
         extractor.visit(tree)
 

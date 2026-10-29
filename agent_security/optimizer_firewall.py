@@ -1,38 +1,37 @@
 """
 agent_security/optimizer_firewall.py
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Pillar 3F — Compiler-Level AST Firewall for Optimizer Output.
+Pillar 3C — Compiler-Level AST Firewall for Optimizer Output.
 
-When the LLM Optimizer Agent proposes refactored code, this module
-inspects the output AST before it is accepted, verifying that:
+Inspects candidate code produced by either the LLM optimizer or the deterministic
+fallback transformer before it is accepted, verifying that:
+  1. Candidate parses cleanly without syntax errors.
+  2. No NEW unapproved module imports were introduced beyond SAFE_STDLIB_MODULES
+     (unless already present in original_code).
+  3. No NEW blocklisted calls appear (reusing ast_gatekeeper blocklists).
+  4. No NEW dangerous dunder accesses (__subclasses__, __globals__, etc.).
+  5. No NEW external URL or IP address literals were injected.
 
-  1. No new dangerous module imports were introduced (beyond a safe
-     whitelist of standard-library modules).
-  2. No forbidden call patterns (os.system, exec, eval, subprocess, etc.)
-     appear in the generated code.
-
-If the generated code passes the firewall, the pipeline returns it.
-If it fails, the pipeline falls back to the deterministic rule-based
-transformer — the LLM output is silently discarded, never executed.
-
-Public API
-──────────
-  OptimizerOutputTainted(Exception)  – carries violations list
-  audit_optimizer_output(source: str) -> tuple[bool, list[str]]
-      Returns (True, []) when clean, (False, [violation, ...]) when tainted.
-      FAILS CLOSED: any unexpected error returns (False, [reason]).
-
-Safe stdlib whitelist
-─────────────────────
-  The optimizer is expected to produce code that only imports from a
-  bounded set of standard-library modules.  Any import not in this list
-  is flagged as a violation.
+Public API:
+  OptimizerOutputTainted(Exception)
+  inspect_candidate(candidate_code: str, original_code: str = "") -> tuple[bool, list[str]]
+  audit_optimizer_output(candidate_code: str, original_code: str = "") -> tuple[bool, list[str]]
+  SAFE_STDLIB_MODULES
 """
 
 from __future__ import annotations
 
 import ast
+import re
 from typing import List, Set, Tuple
+
+# Reuse constants directly from ast_gatekeeper
+from agent_security.ast_gatekeeper import (
+    FORBIDDEN_MODULES,
+    FORBIDDEN_OS_ATTRS,
+    FORBIDDEN_CALLS,
+    FORBIDDEN_DUNDERS,
+)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Safe module whitelist — the optimizer may only introduce these imports
@@ -63,23 +62,8 @@ SAFE_STDLIB_MODULES: frozenset = frozenset({
     "lru_cache",
 })
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Dangerous call patterns that must NEVER appear in optimizer output
-# ─────────────────────────────────────────────────────────────────────────────
-
-_FORBIDDEN_CALLS = frozenset({
-    # Arbitrary code execution
-    "eval", "exec", "compile",
-    # Shell access
-    "system", "popen",
-    # Dynamic import
-    "__import__",
-})
-
-_FORBIDDEN_MODULES = frozenset({
-    "subprocess", "shutil", "socket", "ctypes", "pty", "telnetlib",
-    "ftplib", "smtplib", "http.server", "xmlrpc",
-})
+_IP_REGEX = re.compile(r"\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b")
+_URL_REGEX = re.compile(r"\b(?:https?|ftp|tcp|udp)://[^\s'\"\\]+", re.IGNORECASE)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -87,40 +71,43 @@ _FORBIDDEN_MODULES = frozenset({
 # ─────────────────────────────────────────────────────────────────────────────
 
 class OptimizerOutputTainted(Exception):
-    """Raised when LLM optimizer output contains forbidden patterns."""
+    """Raised when optimizer candidate output contains forbidden patterns."""
 
     def __init__(self, violations: List[str]) -> None:
         self.violations = violations
-        super().__init__(
-            "OptimizerOutputTainted: " + "; ".join(violations)
-        )
+        super().__init__("OptimizerOutputTainted: " + "; ".join(violations))
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Firewall visitor
+# Firewall Visitor
 # ─────────────────────────────────────────────────────────────────────────────
 
 class _FirewallVisitor(ast.NodeVisitor):
-    """Visits optimizer output AST and collects policy violations."""
+    """Visits optimizer candidate AST and collects policy violations."""
 
-    def __init__(self, original_imports: Set[str]) -> None:
-        # Imports that were already present in the ORIGINAL code are allowed;
-        # we only flag NEW modules introduced by the optimizer.
-        self._original_imports = original_imports
+    def __init__(
+        self,
+        original_imports: Set[str],
+        original_dunders: Set[str],
+        original_strings: Set[str],
+    ) -> None:
+        self._orig_imports = original_imports
+        self._orig_dunders = original_dunders
+        self._orig_strings = original_strings
         self.violations: List[str] = []
 
     def _lineno(self, node: ast.AST) -> str:
         return f"line {getattr(node, 'lineno', '?')}"
 
-    # ── Import checks ─────────────────────────────────────────────────────────
+    # 1. Imports
     def _check_module(self, module_name: str, node: ast.AST) -> None:
         root = module_name.split(".")[0]
-        if root in _FORBIDDEN_MODULES:
+        if root in FORBIDDEN_MODULES:
             self.violations.append(
                 f"{self._lineno(node)}: forbidden module '{root}' imported by optimizer"
             )
         elif root not in {m.split(".")[0] for m in SAFE_STDLIB_MODULES}:
-            if root not in self._original_imports:
+            if root not in self._orig_imports:
                 self.violations.append(
                     f"{self._lineno(node)}: optimizer introduced unknown module '{root}'"
                 )
@@ -133,98 +120,147 @@ class _FirewallVisitor(ast.NodeVisitor):
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         if node.module:
             self._check_module(node.module, node)
+            root = node.module.split(".")[0]
+            if root == "os":
+                for alias in node.names:
+                    if alias.name in FORBIDDEN_OS_ATTRS:
+                        self.violations.append(
+                            f"{self._lineno(node)}: forbidden import 'os.{alias.name}' in candidate"
+                        )
         self.generic_visit(node)
 
-    # ── Call checks ───────────────────────────────────────────────────────────
+    # 2. Calls
     def visit_Call(self, node: ast.Call) -> None:
         func = node.func
-        # Bare forbidden calls: eval(), exec(), __import__()
-        if isinstance(func, ast.Name) and func.id in _FORBIDDEN_CALLS:
+        # Bare forbidden calls: eval(), exec(), compile(), __import__()
+        if isinstance(func, ast.Name) and func.id in FORBIDDEN_CALLS:
             self.violations.append(
-                f"{self._lineno(node)}: forbidden call '{func.id}()' in optimizer output"
+                f"{self._lineno(node)}: forbidden call '{func.id}()' in candidate"
             )
-        # Attribute calls: os.system(), subprocess.run()
+        # Attribute calls: os.system(), subprocess.run(), etc.
         elif isinstance(func, ast.Attribute):
             obj = func.value
             attr = func.attr
-            if attr in _FORBIDDEN_CALLS:
+            if attr in FORBIDDEN_CALLS or attr in FORBIDDEN_OS_ATTRS:
                 self.violations.append(
-                    f"{self._lineno(node)}: forbidden attribute call '*.{attr}()' in optimizer output"
+                    f"{self._lineno(node)}: forbidden call '*.{attr}()' in candidate"
                 )
-            if isinstance(obj, ast.Name) and obj.id in _FORBIDDEN_MODULES:
+            if isinstance(obj, ast.Name) and obj.id in FORBIDDEN_MODULES:
                 self.violations.append(
                     f"{self._lineno(node)}: call on forbidden module '{obj.id}.{attr}()'"
                 )
         self.generic_visit(node)
 
+    # 3. Dunders
+    def visit_Attribute(self, node: ast.Attribute) -> None:
+        if node.attr in FORBIDDEN_DUNDERS:
+            if node.attr not in self._orig_dunders:
+                self.violations.append(
+                    f"{self._lineno(node)}: new dangerous dunder access '.{node.attr}' in candidate"
+                )
+        self.generic_visit(node)
+
+    # 4. String literals (URL / IP injection check)
+    def visit_Constant(self, node: ast.Constant) -> None:
+        if isinstance(node.value, str):
+            val = node.value
+            if val not in self._orig_strings:
+                if _URL_REGEX.search(val):
+                    self.violations.append(
+                        f"{self._lineno(node)}: new URL literal '{val[:40]}' injected in candidate"
+                    )
+                elif _IP_REGEX.search(val):
+                    self.violations.append(
+                        f"{self._lineno(node)}: new IP literal '{val[:20]}' injected in candidate"
+                    )
+        self.generic_visit(node)
+
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Helper: extract the set of top-level module names imported by source
+# Extraction Helpers for Original Code Baseline
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _collect_imports(source: str) -> Set[str]:
-    """Return the set of root module names imported in *source*."""
+def _collect_original_metadata(source: str) -> Tuple[Set[str], Set[str], Set[str]]:
+    """Collect imports, dunders, and string literals already in original source."""
+    if not source:
+        return set(), set(), set()
+
+    imports: Set[str] = set()
+    dunders: Set[str] = set()
+    strings: Set[str] = set()
+
+    # Extract URLs and IPs appearing anywhere in original source
+    for url in _URL_REGEX.findall(source):
+        strings.add(url)
+    for ip in _IP_REGEX.findall(source):
+        strings.add(ip)
+
     try:
         tree = ast.parse(source)
     except Exception:
-        return set()
-    names: Set[str] = set()
+        return imports, dunders, strings
+
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             for alias in node.names:
-                names.add(alias.name.split(".")[0])
+                imports.add(alias.name.split(".")[0])
         elif isinstance(node, ast.ImportFrom) and node.module:
-            names.add(node.module.split(".")[0])
-    return names
+            imports.add(node.module.split(".")[0])
+        elif isinstance(node, ast.Attribute) and node.attr.startswith("__"):
+            dunders.add(node.attr)
+        elif isinstance(node, ast.Constant) and isinstance(node.value, str):
+            strings.add(node.value)
+
+    return imports, dunders, strings
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Public function
+# Public Functions
 # ─────────────────────────────────────────────────────────────────────────────
 
-def audit_optimizer_output(
-    optimized_source: str,
+def inspect_candidate(
+    candidate_code: str,
+    original_code: str = "",
     original_source: str = "",
 ) -> Tuple[bool, List[str]]:
     """
-    Inspect LLM-generated *optimized_source* for forbidden patterns.
+    Inspect candidate code (from LLM or fallback) for security violations.
 
-    Parameters
-    ----------
-    optimized_source : str
-        The code produced by the LLM optimizer.
-    original_source : str, optional
-        The original user code.  Modules already imported in the original
-        are not flagged as new introductions by the optimizer.
+    Parameters:
+      candidate_code: The code to inspect.
+      original_code: Original code for baseline diff comparison.
+      original_source: Alias for original_code.
 
-    Returns
-    -------
-    (is_clean, violations)
-        ``is_clean`` is True when the output is safe to use.
-        ``violations`` is empty when clean.
-
-    Fail-closed
-    -----------
-    Any unexpected error returns (False, [reason]).
+    Returns:
+      (is_clean: bool, violations: list[str])
     """
-    if not optimized_source or not optimized_source.strip():
-        return False, ["optimizer produced empty output"]
+    effective_original = original_source or original_code
+    if not candidate_code or not candidate_code.strip():
+        return False, ["Candidate code is empty"]
 
     try:
-        tree = ast.parse(optimized_source)
+        tree = ast.parse(candidate_code)
     except SyntaxError as exc:
-        return False, [f"optimizer output has syntax error: {exc}"]
+        return False, [f"Candidate code has syntax error: {exc}"]
     except Exception as exc:
-        return False, [f"firewall parse failed: {exc}"]
+        return False, [f"Candidate AST parse failed: {exc}"]
 
     try:
-        original_imports = _collect_imports(original_source) if original_source else set()
-        visitor = _FirewallVisitor(original_imports=original_imports)
+        orig_imports, orig_dunders, orig_strings = _collect_original_metadata(effective_original)
+        visitor = _FirewallVisitor(
+            original_imports=orig_imports,
+            original_dunders=orig_dunders,
+            original_strings=orig_strings,
+        )
         visitor.visit(tree)
         violations = visitor.violations
     except Exception as exc:
-        return False, [f"firewall AST walk failed: {exc}"]
+        return False, [f"Firewall inspection failed: {exc}"]
 
     if violations:
         return False, violations
     return True, []
+
+
+# Backward compatibility alias
+audit_optimizer_output = inspect_candidate

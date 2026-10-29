@@ -12,13 +12,17 @@ import ast
 import re
 from typing import List, Dict, Tuple, Optional
 
-# ── Attack 5 / Pillar 3: Regex timeout wrapper to prevent ReDoS ───────────────
+# ── Attack 5 / Pillar 4A: Safe regex search to prevent ReDoS ──────────────────
 try:
-    from agent_security.regex_timeout import timed_search
+    from agent_security.safe_regex import safe_search
     _TIMED_REGEX_AVAILABLE = True
 except ImportError:
     _TIMED_REGEX_AVAILABLE = False
-    timed_search = re.search
+    def safe_search(pattern, string, timeout=0.5):
+        try:
+            return re.search(pattern, string), False
+        except Exception:
+            return None, False
 # ─────────────────────────────────────────────────────────────────────────────
 
 
@@ -254,7 +258,21 @@ class SecurityAuditor:
 
         for pattern, message, severity, rule_id in self.patterns:
             for idx, line in enumerate(lines):
-                if timed_search(pattern, line):
+                match, timed_out = safe_search(pattern, line)
+                if timed_out:
+                    key = ('sec.py.redos-degraded', idx + 1)
+                    if key not in seen:
+                        seen.add(key)
+                        findings.append({
+                            'rule_id': 'sec.py.redos-degraded',
+                            'cwe': 'CWE-1333',
+                            'category': 'ReDoS Protection',
+                            'line': idx + 1,
+                            'message': f'[CWE-1333] Scan degraded: regex match timed out on line {idx + 1}',
+                            'severity': 'LOW',
+                            'snippet': line.strip()[:100]
+                        })
+                elif match:
                     key = (rule_id, idx + 1)
                     if key not in seen:
                         seen.add(key)

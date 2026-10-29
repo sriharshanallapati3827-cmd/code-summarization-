@@ -14,7 +14,14 @@ import ast
 import re
 from typing import Dict, List, Tuple
 
-# ── Pillar 3C: Nesting Guard ────────────────────────────────────────────────────
+# ── Pillar 3B: Input Limits & Safe Parsing ────────────────────────────────────
+try:
+    from agent_security.input_limits import check_source, safe_parse, InputRejected
+    _LIMITS_AVAILABLE = True
+except ImportError:
+    _LIMITS_AVAILABLE = False
+    safe_parse = ast.parse
+
 try:
     from agent_security.nesting_guard import check_nesting_depth
     _NESTING_GUARD_AVAILABLE = True
@@ -50,8 +57,25 @@ class SelfHealingAgent:
                 'errors_diagnosed': []
             }
 
-        # ── Pillar 3C: nesting depth check before any ast.parse() ────────────
-        if _NESTING_GUARD_AVAILABLE:
+        # ── Pillar 3B/3C: input limits check before any regex / repair pass ───
+        if _LIMITS_AVAILABLE:
+            is_safe, reason = check_source(source_code)
+            if not is_safe:
+                err_type = 'NestingTooDeep' if 'Bracket nesting depth' in reason else 'InputRejected'
+                return {
+                    'status': 'blocked',
+                    'is_healed': False,
+                    'clean_code': source_code,
+                    'repairs': [],
+                    'errors_diagnosed': [{
+                        'type': err_type,
+                        'message': reason,
+                        'line': 0,
+                        'offset': 0,
+                        'text': '',
+                    }],
+                }
+        elif _NESTING_GUARD_AVAILABLE:
             is_safe, depth = check_nesting_depth(source_code)
             if not is_safe:
                 return {
@@ -71,7 +95,7 @@ class SelfHealingAgent:
 
         # 1. Check if code is already valid
         try:
-            ast.parse(source_code)
+            safe_parse(source_code)
             return {
                 'status': 'valid',
                 'is_healed': False,
@@ -88,7 +112,7 @@ class SelfHealingAgent:
 
         for pass_idx in range(self.max_passes):
             try:
-                ast.parse(current_code)
+                safe_parse(current_code)
                 # Success! Code is now valid
                 return {
                     'status': 'healed',
@@ -115,7 +139,7 @@ class SelfHealingAgent:
 
         # Final verification
         try:
-            ast.parse(current_code)
+            safe_parse(current_code)
             return {
                 'status': 'healed',
                 'is_healed': True,

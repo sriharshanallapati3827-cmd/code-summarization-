@@ -37,6 +37,16 @@ from security_scanner import SecurityAuditor
 from hardware_profiler import HardwareProfiler
 from model_pipeline import CodeSummarizer
 
+# ── Pillar 3B: Input Limits Guard ───────────────────────────────────────────
+try:
+    from agent_security.input_limits import InputRejected, safe_parse
+    _INPUT_LIMITS_AVAILABLE = True
+except ImportError:
+    _INPUT_LIMITS_AVAILABLE = False
+    InputRejected = Exception
+    safe_parse = ast.parse
+# ─────────────────────────────────────────────────────────────────────────────
+
 # ── Pillar 2: DFA Agent Workflow Guard ───────────────────────────────────────────
 try:
     from agent_security.workflow_dfa import WorkflowDFA, WorkflowViolation
@@ -99,6 +109,7 @@ class AgentContext:
     workflow_dfa: Optional[Any] = field(default=None)
     # Flag set when the DFA traps; allows callers to detect the error.
     dfa_trapped: bool = False
+    input_rejected: bool = False
 
     def add_trace(self, agent_id: str, phase: CognitivePhase, message: str, **metadata):
         event = ThoughtTraceEvent(
@@ -165,42 +176,51 @@ class AgentController:
                 return False
         # ─────────────────────────────────────────────────────────────────────
 
-        # ── AGENT 0: Self-Healing Guard ────────────────────────────────────
-        if not _dfa_require("validate"):
-            return ctx
-        self._run_agent_0_self_healing(ctx)
-        _dfa_step("validate")
+        try:
+            # ── AGENT 0: Self-Healing Guard ────────────────────────────────────
+            if not _dfa_require("validate"):
+                return ctx
+            self._run_agent_0_self_healing(ctx)
+            _dfa_step("validate")
 
-        # ── AGENT 1: Structural Inspector (AST & PDG) ──────────────────────
-        if not _dfa_require("parse"):
-            return ctx
-        self._run_agent_1_structural_inspector(ctx)
-        _dfa_step("parse")    # AST pass
-        _dfa_step("graph")    # PDG pass (both done inside same agent)
+            # ── AGENT 1: Structural Inspector (AST & PDG) ──────────────────────
+            if not _dfa_require("parse"):
+                return ctx
+            self._run_agent_1_structural_inspector(ctx)
+            _dfa_step("parse")    # AST pass
+            _dfa_step("graph")    # PDG pass (both done inside same agent)
 
-        # ── AGENT 2: Green Computing Auditor ────────────────────────────
-        if not _dfa_require("green_audit"):
-            return ctx
-        self._run_agent_2_green_auditor(ctx, elapsed_start=workflow_start)
-        _dfa_step("green_audit")
+            # ── AGENT 2: Green Computing Auditor ────────────────────────────
+            if not _dfa_require("green_audit"):
+                return ctx
+            self._run_agent_2_green_auditor(ctx, elapsed_start=workflow_start)
+            _dfa_step("green_audit")
 
-        # ── AGENT 3: Security & Vulnerability Auditor ─────────────────────
-        if not _dfa_require("audit"):
-            return ctx
-        self._run_agent_3_security_auditor(ctx)
-        _dfa_step("audit")
+            # ── AGENT 3: Security & Vulnerability Auditor ─────────────────────
+            if not _dfa_require("audit"):
+                return ctx
+            self._run_agent_3_security_auditor(ctx)
+            _dfa_step("audit")
 
-        # ── Hardware Profile (Dynamic Measurement) ─────────────────────────
-        if not _dfa_require("profile"):
-            return ctx
-        self._run_hardware_profile(ctx)
-        _dfa_step("profile")
+            # ── Hardware Profile (Dynamic Measurement) ─────────────────────────
+            if not _dfa_require("profile"):
+                return ctx
+            self._run_hardware_profile(ctx)
+            _dfa_step("profile")
 
-        # ── AGENT 4: Multi-Level Technical Communicator ──────────────────
-        if not _dfa_require("summarize"):
-            return ctx
-        self._run_agent_4_communicator(ctx)
-        _dfa_step("summarize")
+            # ── AGENT 4: Multi-Level Technical Communicator ──────────────────
+            if not _dfa_require("summarize"):
+                return ctx
+            self._run_agent_4_communicator(ctx)
+            _dfa_step("summarize")
+
+        except (InputRejected, RecursionError, MemoryError) as exc:
+            ctx.input_rejected = True
+            ctx.add_trace(
+                "[Input Limits Guard]",
+                CognitivePhase.ACT,
+                f"INPUT REJECTED: {exc} — pipeline halted immediately.",
+            )
 
         return ctx
 
@@ -357,7 +377,7 @@ class AgentController:
     def _generate_docstrings(self, ctx: AgentContext) -> str:
         """Extracts function signatures from AST and constructs Google-style docstrings."""
         try:
-            tree = ast.parse(ctx.clean_code)
+            tree = safe_parse(ctx.clean_code)
         except Exception:
             return "# Could not generate docstrings: syntax could not be parsed."
 

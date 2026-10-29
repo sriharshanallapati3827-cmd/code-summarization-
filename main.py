@@ -111,7 +111,15 @@ def calculate_discount(price, is_member):
 
     if args.optimize:
         print("\n================ AUTONOMOUS GREEN & SECURE OPTIMIZER ================")
-        opt_res = optimize_code(source_code, model_path=args.model_path)
+        dfa = None
+        try:
+            from agent_security.workflow_dfa import WorkflowDFA
+            dfa = WorkflowDFA()
+            for ev in ["validate", "parse", "graph", "audit"]:
+                dfa.step(ev)
+        except ImportError:
+            dfa = None
+        opt_res = optimize_code(source_code, model_path=args.model_path, dfa=dfa)
         print(f"\nVerification Status: {'[PASSED]' if opt_res.verified else '[FAILED]'}")
         print(f"Eco Score:      {opt_res.original_eco_score}/100 -> {opt_res.optimized_eco_score}/100 (Delta: +{opt_res.eco_delta})")
         print(f"Security Score: {opt_res.original_sec_score}/100 -> {opt_res.optimized_sec_score}/100 (Delta: +{opt_res.sec_delta})")
