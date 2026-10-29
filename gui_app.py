@@ -8,19 +8,6 @@ def _get_optimizer_dfa():
     except Exception:
         return None
 
-"""
-gui_app.py - Agentic AI Code Intelligence & Security Lab (Streamlit UI)
-======================================================================
-Modern, interactive dashboard providing:
-  1. Multi-Agent Intelligence (Executive, Developer Walkthrough, Auto Docstrings, Thought Trace)
-  2. Security & CWE Audit (40+ rules, PDG Taint Tracking, Remediations)
-  3. Autonomous Green & Secure Optimizer (Closed-loop refactoring, Before vs. After diff)
-  4. Interactive Physics PDG Graph (vis.js physics network)
-  5. Green Computing & Real-Time Hardware Profiler (psutil CPU/RAM/latency/energy)
-  6. AST Structural Explorer
-
-Authors: M. Sathwik & N . Sri Harsha
-"""
 
 import sys
 import streamlit as st
