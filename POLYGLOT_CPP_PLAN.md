@@ -71,11 +71,11 @@ The core objective is to preserve the existing **5-Agent workflow**, **4-Pillar 
 - [x] Add unit verification test checking that sample C++ code parses into concrete Tree-sitter syntax nodes.
 
 ### Phase 2: C++ Program Dependence Graph (PDG) Builder
-- [ ] Build `polyglot/cpp_pdg_extractor.py` targeting Tree-sitter C++ grammar:
+- [x] Build `polyglot/cpp_pdg_extractor.py` targeting Tree-sitter C++ grammar:
   - **Control Flow:** `for_statement`, `while_statement`, `if_statement`, `switch_statement`.
   - **Data Flow:** Variable declarations (`declaration`), assignments (`assignment_expression`), and returns.
-- [ ] Normalize C++ PDG into existing NetworkX format matching vis.js frontend schema.
-- [ ] Verify interactive graph generation for C++ nested loops and DSA algorithms.
+- [x] Normalize C++ PDG into existing NetworkX format matching vis.js frontend schema.
+- [x] Verify interactive graph generation for C++ nested loops and DSA algorithms.
 
 ### Phase 3: Polyglot Security Threat Hunter (C++ CWE Suite)
 - [ ] Build `polyglot/cpp_security_auditor.py` with AST query rules:
@@ -114,7 +114,7 @@ The core objective is to preserve the existing **5-Agent workflow**, **4-Pillar 
 | Phase | Milestone | Status | Key Deliverables |
 |:---:|:---|:---:|:---|
 | **1** | Tree-sitter Grammar Integration | ✅ Complete | `tree-sitter`, `tree-sitter-cpp`, `ParserFactory` |
-| **2** | C++ PDG & Data Flow Extractor | ⬜ Not Started | `cpp_pdg_extractor.py`, vis.js normalization |
+| **2** | C++ PDG & Data Flow Extractor | ✅ Complete | `cpp_pdg_extractor.py`, vis.js normalization |
 | **3** | C++ Security Auditor (CWEs) | ⬜ Not Started | AST/Tree-sitter queries for CWE-120, CWE-119, CWE-78 |
 | **4** | C++ Syntax Self-Healer | ⬜ Not Started | Semicolon `;` and brace `{}` autonomous repair |
 | **5** | C++ Profiler & Sandbox | ⬜ Not Started | `g++` compilation harness + static complexity fallback |
