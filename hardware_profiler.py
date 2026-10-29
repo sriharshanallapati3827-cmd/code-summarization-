@@ -158,7 +158,8 @@ class HardwareProfiler:
 
         # ── 2. Isolated Subprocess Sandbox Execution ─────────────────────────
         # Create temporary working directory that is strictly cleaned up
-        with tempfile.TemporaryDirectory() as temp_dir:
+        temp_kwargs = {"ignore_cleanup_errors": True} if sys.version_info >= (3, 10) else {}
+        with tempfile.TemporaryDirectory(**temp_kwargs) as temp_dir:
             snippet_path = os.path.join(temp_dir, "snippet.py")
             with open(snippet_path, "w", encoding="utf-8") as f:
                 f.write(source_code)

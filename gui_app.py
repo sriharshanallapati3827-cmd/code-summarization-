@@ -120,6 +120,163 @@ st.markdown(
         color: #e2e8f0 !important;
         border: 1px solid #334155 !important;
     }
+    .heal-patch-card {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border: 1px solid #334155;
+        border-radius: 12px;
+        padding: 1.1rem 1.3rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    }
+    .heal-patch-header {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+        margin-bottom: 0.5rem;
+    }
+    .heal-badge-line {
+        background: rgba(56, 189, 248, 0.15);
+        border: 1px solid rgba(56, 189, 248, 0.4);
+        color: #38bdf8;
+        font-weight: 700;
+        font-size: 0.78rem;
+        padding: 0.2rem 0.65rem;
+        border-radius: 6px;
+        letter-spacing: 0.3px;
+    }
+    .heal-badge-rule {
+        background: rgba(129, 140, 248, 0.15);
+        border: 1px solid rgba(129, 140, 248, 0.4);
+        color: #a5b4fc;
+        font-weight: 600;
+        font-size: 0.78rem;
+        padding: 0.2rem 0.65rem;
+        border-radius: 6px;
+    }
+    .heal-badge-status {
+        background: rgba(34, 197, 94, 0.15);
+        border: 1px solid rgba(34, 197, 94, 0.4);
+        color: #86efac;
+        font-weight: 700;
+        font-size: 0.75rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 6px;
+        text-transform: uppercase;
+        margin-left: auto;
+    }
+    .heal-patch-desc {
+        color: #cbd5e1;
+        font-size: 0.88rem;
+        margin-bottom: 0.85rem;
+        line-height: 1.4;
+    }
+    .heal-state-grid {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        gap: 0.8rem;
+        align-items: center;
+    }
+    @media (max-width: 768px) {
+        .heal-state-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    .heal-state-col {
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid #334155;
+    }
+    .heal-state-before {
+        border-color: rgba(239, 68, 68, 0.35);
+        background: rgba(239, 68, 68, 0.04);
+    }
+    .heal-state-after {
+        border-color: rgba(34, 197, 94, 0.35);
+        background: rgba(34, 197, 94, 0.04);
+    }
+    .heal-state-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.35rem 0.75rem;
+        font-size: 0.75rem;
+        background: rgba(15, 23, 42, 0.85);
+        border-bottom: 1px solid #334155;
+    }
+    .pill-before {
+        background: rgba(239, 68, 68, 0.2);
+        color: #fca5a5;
+        border: 1px solid rgba(239, 68, 68, 0.4);
+        font-weight: 800;
+        padding: 1px 6px;
+        border-radius: 4px;
+        font-size: 0.7rem;
+    }
+    .pill-after {
+        background: rgba(34, 197, 94, 0.2);
+        color: #86efac;
+        border: 1px solid rgba(34, 197, 94, 0.4);
+        font-weight: 800;
+        padding: 1px 6px;
+        border-radius: 4px;
+        font-size: 0.7rem;
+    }
+    .pill-state-sub {
+        color: #94a3b8;
+        font-size: 0.75rem;
+    }
+    .heal-code-box {
+        padding: 0.6rem 0.8rem;
+        font-family: 'Consolas', 'Fira Code', monospace;
+        font-size: 0.84rem;
+        white-space: pre-wrap;
+        word-break: break-all;
+        line-height: 1.45;
+    }
+    .heal-state-before .heal-code-box {
+        color: #fca5a5;
+    }
+    .heal-state-after .heal-code-box {
+        color: #86efac;
+    }
+    .heal-transition-divider {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .heal-arrow-pill {
+        background: #0f172a;
+        border: 1px solid #334155;
+        color: #38bdf8;
+        font-size: 0.76rem;
+        font-weight: 600;
+        padding: 0.3rem 0.65rem;
+        border-radius: 9999px;
+        white-space: nowrap;
+    }
+    .heal-summary-bar {
+        display: flex;
+        gap: 0.6rem;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+    }
+    .heal-summary-item {
+        background: #1e293b;
+        border: 1px solid #334155;
+        color: #cbd5e1;
+        padding: 0.25rem 0.7rem;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    .heal-summary-val {
+        color: #38bdf8;
+        font-weight: 700;
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -287,10 +444,86 @@ if ctx is not None or opt is not None:
             # Self-healing banner if repaired
             healing = ctx.healing_report
             if healing.get('is_healed'):
-                st.warning(f"🩹 **Self-Healing Guard Triggered:** Repaired {len(healing.get('repairs', []))} syntax error(s) autonomously.")
-                with st.expander("View Self-Healing Patch Details"):
-                    for r in healing.get('repairs', []):
-                        st.write(f"- {r}")
+                text_repairs = healing.get('repairs', [])
+                details = healing.get('repair_details', [])
+
+                # Fallback synthesis if repair_details is empty
+                if not details and text_repairs:
+                    import re
+                    raw_lines = ctx.raw_code.splitlines() if getattr(ctx, 'raw_code', None) else []
+                    clean_lines = ctx.healed_code.splitlines() if getattr(ctx, 'healed_code', None) else []
+                    for r in text_repairs:
+                        m = re.search(r'Line (\d+)', str(r))
+                        line_idx = int(m.group(1)) if m else None
+                        before_val = raw_lines[line_idx - 1] if line_idx and line_idx <= len(raw_lines) else ""
+                        after_val = clean_lines[line_idx - 1] if line_idx and line_idx <= len(clean_lines) else ""
+                        details.append({
+                            'line': line_idx or '?',
+                            'rule': 'SYN-001: Syntax Repair',
+                            'description': str(r),
+                            'before': before_val,
+                            'after': after_val,
+                            'action': 'Autonomously Healed'
+                        })
+
+                lines_touched = sorted(set(d.get('line', 0) for d in details if isinstance(d.get('line'), int)))
+                lines_str = ", ".join(f"Line {ln}" for ln in lines_touched) if lines_touched else f"{len(text_repairs)} location(s)"
+
+                st.warning(
+                    f"🩹 **Self-Healing Guard Triggered:** Autonomously repaired **{len(text_repairs)}** syntax defect(s) across **{lines_str}**. "
+                    "Input code successfully normalized to 100% AST-compliant Python."
+                )
+
+                with st.expander("🔍 View Self-Healing Patch Details & State Transitions", expanded=True):
+                    import html as _html_mod
+
+                    summary_html = f'''<div class="heal-summary-bar">
+  <div class="heal-summary-item">🔧 Defects Healed: <span class="heal-summary-val">{len(text_repairs)}</span></div>
+  <div class="heal-summary-item">📝 Lines Modified: <span class="heal-summary-val">{lines_str}</span></div>
+  <div class="heal-summary-item">🛡️ Status: <span class="heal-summary-val" style="color:#86efac;">100% AST Valid</span></div>
+</div>'''
+                    st.markdown(summary_html, unsafe_allow_html=True)
+
+                    if details:
+                        for d in details:
+                            line_no = d.get('line', '?')
+                            rule_esc = _html_mod.escape(str(d.get('rule', 'Syntax Repair')))
+                            desc_esc = _html_mod.escape(str(d.get('description', '')))
+                            before_esc = _html_mod.escape(str(d.get('before', '')).rstrip())
+                            after_esc = _html_mod.escape(str(d.get('after', '')).rstrip())
+                            action_esc = _html_mod.escape(str(d.get('action', 'Healed')))
+
+                            card_html = f'''<div class="heal-patch-card">
+  <div class="heal-patch-header">
+    <span class="heal-badge-line">Line {line_no}</span>
+    <span class="heal-badge-rule">{rule_esc}</span>
+    <span class="heal-badge-status">HEALED</span>
+  </div>
+  <div class="heal-patch-desc">{desc_esc}</div>
+  <div class="heal-state-grid">
+    <div class="heal-state-col heal-state-before">
+      <div class="heal-state-label">
+        <span class="pill-before">BEFORE</span>
+        <span class="pill-state-sub">Malformed Syntax</span>
+      </div>
+      <div class="heal-code-box">{before_esc if before_esc else "<em>(empty line)</em>"}</div>
+    </div>
+    <div class="heal-transition-divider">
+      <div class="heal-arrow-pill">➔ {action_esc}</div>
+    </div>
+    <div class="heal-state-col heal-state-after">
+      <div class="heal-state-label">
+        <span class="pill-after">AFTER</span>
+        <span class="pill-state-sub">AST Validated</span>
+      </div>
+      <div class="heal-code-box">{after_esc if after_esc else "<em>(empty line)</em>"}</div>
+    </div>
+  </div>
+</div>'''
+                            st.markdown(card_html, unsafe_allow_html=True)
+                    else:
+                        for r in text_repairs:
+                            st.write(f"- {r}")
 
             st.markdown("### 📋 3-in-1 Documentation Suite")
             doc_col1, doc_col2 = st.columns([1.2, 1])

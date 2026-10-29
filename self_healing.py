@@ -54,6 +54,7 @@ class SelfHealingAgent:
                 'is_healed': False,
                 'clean_code': source_code,
                 'repairs': [],
+                'repair_details': [],
                 'errors_diagnosed': []
             }
 
@@ -67,6 +68,7 @@ class SelfHealingAgent:
                     'is_healed': False,
                     'clean_code': source_code,
                     'repairs': [],
+                    'repair_details': [],
                     'errors_diagnosed': [{
                         'type': err_type,
                         'message': reason,
@@ -83,6 +85,7 @@ class SelfHealingAgent:
                     'is_healed': False,
                     'clean_code': source_code,
                     'repairs': [],
+                    'repair_details': [],
                     'errors_diagnosed': [{
                         'type': 'NestingTooDeep',
                         'message': f'Nesting depth {depth} exceeds safety limit (Pillar 3)',
@@ -101,6 +104,7 @@ class SelfHealingAgent:
                 'is_healed': False,
                 'clean_code': source_code,
                 'repairs': [],
+                'repair_details': [],
                 'errors_diagnosed': []
             }
         except (SyntaxError, IndentationError) as initial_err:
@@ -108,6 +112,7 @@ class SelfHealingAgent:
 
         current_code = source_code
         all_repairs = []
+        all_details = []
         diagnosed_errors = [first_error_diag]
 
         for pass_idx in range(self.max_passes):
@@ -119,6 +124,7 @@ class SelfHealingAgent:
                     'is_healed': True,
                     'clean_code': current_code,
                     'repairs': all_repairs,
+                    'repair_details': all_details,
                     'errors_diagnosed': diagnosed_errors
                 }
             except (SyntaxError, IndentationError) as err:
@@ -127,14 +133,15 @@ class SelfHealingAgent:
                     diagnosed_errors.append(err_info)
 
                 # Attempt targeted healing on current error
-                patched_code, repairs_made = self._apply_healing_pass(current_code, err)
+                patched_code, repairs_made, details_made = self._apply_healing_pass(current_code, err)
                 if not repairs_made or patched_code == current_code:
                     # Try general normalization pass
-                    patched_code, repairs_made = self._apply_general_cleanup(current_code)
+                    patched_code, repairs_made, details_made = self._apply_general_cleanup(current_code)
                     if not repairs_made or patched_code == current_code:
                         break
 
                 all_repairs.extend(repairs_made)
+                all_details.extend(details_made)
                 current_code = patched_code
 
         # Final verification
@@ -145,6 +152,7 @@ class SelfHealingAgent:
                 'is_healed': True,
                 'clean_code': current_code,
                 'repairs': all_repairs,
+                'repair_details': all_details,
                 'errors_diagnosed': diagnosed_errors
             }
         except (SyntaxError, IndentationError) as final_err:
@@ -153,13 +161,26 @@ class SelfHealingAgent:
                 'is_healed': False,
                 'clean_code': current_code,
                 'repairs': all_repairs,
+                'repair_details': all_details,
                 'errors_diagnosed': diagnosed_errors,
                 'final_error': str(final_err)
             }
 
-    def _apply_healing_pass(self, code: str, err: Exception) -> Tuple[str, List[str]]:
+    @staticmethod
+    def _make_detail(line_num: int, rule: str, description: str, before: str, after: str, action: str = "") -> Dict:
+        return {
+            'line': line_num,
+            'rule': rule,
+            'description': description,
+            'before': before,
+            'after': after,
+            'action': action or description,
+        }
+
+    def _apply_healing_pass(self, code: str, err: Exception) -> Tuple[str, List[str], List[Dict]]:
         lines = code.splitlines()
         repairs = []
+        details = []
         line_num = getattr(err, 'lineno', None)
 
         if line_num is not None and 1 <= line_num <= len(lines):
@@ -171,7 +192,15 @@ class SelfHealingAgent:
             if repaired:
                 lines[idx] = healed_line
                 repairs.append(f"Line {line_num}: Added missing colon ':' after block statement.")
-                return "\n".join(lines), repairs
+                details.append(self._make_detail(
+                    line_num=line_num,
+                    rule="SYN-001: Missing Colon",
+                    description="Added missing colon ':' after block statement.",
+                    before=target_line,
+                    after=healed_line,
+                    action="Appended ':' to block header"
+                ))
+                return "\n".join(lines), repairs, details
 
             # Also check previous line if current is IndentationError
             if isinstance(err, IndentationError) and idx > 0:
@@ -180,7 +209,15 @@ class SelfHealingAgent:
                 if prev_rep:
                     lines[idx - 1] = prev_healed
                     repairs.append(f"Line {line_num - 1}: Added missing colon ':' before indented block.")
-                    return "\n".join(lines), repairs
+                    details.append(self._make_detail(
+                        line_num=line_num - 1,
+                        rule="SYN-001: Missing Colon",
+                        description="Added missing colon ':' before indented block.",
+                        before=prev_line,
+                        after=prev_healed,
+                        action="Appended ':' to block header"
+                    ))
+                    return "\n".join(lines), repairs, details
 
             # 2. Align elif/else/except/finally with matching header
             if target_line.strip().startswith(('elif', 'else', 'except', 'finally')):
@@ -192,49 +229,100 @@ class SelfHealingAgent:
                         if new_line != target_line:
                             lines[idx] = new_line
                             repairs.append(f"Line {line_num}: Aligned '{target_line.strip()}' with outer block header.")
-                            return "\n".join(lines), repairs
+                            details.append(self._make_detail(
+                                line_num=line_num,
+                                rule="SYN-002: Block Alignment",
+                                description=f"Aligned '{target_line.strip()}' with outer block header.",
+                                before=target_line,
+                                after=new_line,
+                                action="Adjusted indentation to match outer header"
+                            ))
+                            return "\n".join(lines), repairs, details
 
             # 3. Missing Indentation after block statement
             if idx > 0 and self._is_block_header(lines[idx - 1]):
                 if not target_line.startswith(('    ', '\t')) and target_line.strip():
                     parent_indent = len(lines[idx - 1]) - len(lines[idx - 1].lstrip())
-                    lines[idx] = (' ' * (parent_indent + 4)) + target_line.lstrip()
+                    new_indented = (' ' * (parent_indent + 4)) + target_line.lstrip()
+                    lines[idx] = new_indented
                     repairs.append(f"Line {line_num}: Applied indentation for statement following '{lines[idx - 1].strip()}'.")
-                    return "\n".join(lines), repairs
+                    details.append(self._make_detail(
+                        line_num=line_num,
+                        rule="SYN-003: Indentation Defect",
+                        description=f"Applied indentation for statement following '{lines[idx - 1].strip()}'.",
+                        before=target_line,
+                        after=new_indented,
+                        action="Added 4-space block indentation"
+                    ))
+                    return "\n".join(lines), repairs, details
 
             # 4. Accidental single '=' in if/elif
             healed_eq, eq_rep = self._fix_assignment_in_conditional(target_line)
             if eq_rep:
                 lines[idx] = healed_eq
                 repairs.append(f"Line {line_num}: Replaced assignment '=' with equality comparison '=='.")
-                return "\n".join(lines), repairs
+                details.append(self._make_detail(
+                    line_num=line_num,
+                    rule="SYN-004: Assignment in Conditional",
+                    description="Replaced assignment '=' with equality comparison '=='.",
+                    before=target_line,
+                    after=healed_eq,
+                    action="Replaced '=' with '=='"
+                ))
+                return "\n".join(lines), repairs, details
 
             # 5. Unclosed quotes on line
             healed_quotes, q_rep = self._fix_unclosed_quotes(target_line)
             if q_rep:
                 lines[idx] = healed_quotes
                 repairs.append(f"Line {line_num}: Closed unterminated string literal.")
-                return "\n".join(lines), repairs
+                details.append(self._make_detail(
+                    line_num=line_num,
+                    rule="SYN-005: Unclosed String",
+                    description="Closed unterminated string literal.",
+                    before=target_line,
+                    after=healed_quotes,
+                    action="Appended matching quote"
+                ))
+                return "\n".join(lines), repairs, details
 
         # 5. Global unmatched brackets check
         healed_brackets, b_rep = self._fix_unmatched_brackets(code)
         if b_rep:
             repairs.append(b_rep)
-            return healed_brackets, repairs
+            details.append(self._make_detail(
+                line_num=len(lines),
+                rule="SYN-006: Unclosed Delimiters",
+                description=b_rep,
+                before=code.rstrip(),
+                after=healed_brackets.rstrip(),
+                action="Appended closing delimiter(s)"
+            ))
+            return healed_brackets, repairs, details
 
-        return code, []
+        return code, [], []
 
-    def _apply_general_cleanup(self, code: str) -> Tuple[str, List[str]]:
+    def _apply_general_cleanup(self, code: str) -> Tuple[str, List[str], List[Dict]]:
         lines = code.splitlines()
         repairs = []
+        details = []
         modified = False
 
         # Pass 1: Ensure all block headers have colons
         for i, line in enumerate(lines):
             healed, rep = self._fix_missing_colon(line)
             if rep:
+                orig = lines[i]
                 lines[i] = healed
                 repairs.append(f"Line {i + 1}: Added missing colon ':'.")
+                details.append(self._make_detail(
+                    line_num=i + 1,
+                    rule="SYN-001: Missing Colon",
+                    description="Added missing colon ':'.",
+                    before=orig,
+                    after=healed,
+                    action="Appended ':' to block header"
+                ))
                 modified = True
 
         # Pass 2: Progressive block indentation healing
@@ -254,8 +342,18 @@ class SelfHealingAgent:
                 if is_dedent_keyword and current_indent == expected_indent - 4:
                     pass  # Legit dedent keyword
                 else:
-                    lines[i] = (' ' * expected_indent) + stripped
+                    orig = lines[i]
+                    new_indented = (' ' * expected_indent) + stripped
+                    lines[i] = new_indented
                     repairs.append(f"Line {i + 1}: Adjusted block indentation.")
+                    details.append(self._make_detail(
+                        line_num=i + 1,
+                        rule="SYN-003: Indentation Defect",
+                        description="Adjusted block indentation.",
+                        before=orig,
+                        after=new_indented,
+                        action="Aligned indentation to block scope"
+                    ))
                     modified = True
 
             # If current line is a block header, next non-empty lines expect more indent
@@ -264,14 +362,22 @@ class SelfHealingAgent:
                 expected_indent = header_indent + 4
 
         if modified:
-            return "\n".join(lines), repairs
+            return "\n".join(lines), repairs, details
 
         # Bracket check
         healed_brackets, b_rep = self._fix_unmatched_brackets(code)
         if b_rep:
-            return healed_brackets, [b_rep]
+            details.append(self._make_detail(
+                line_num=len(lines),
+                rule="SYN-006: Unclosed Delimiters",
+                description=b_rep,
+                before=code.rstrip(),
+                after=healed_brackets.rstrip(),
+                action="Appended closing delimiter(s)"
+            ))
+            return healed_brackets, [b_rep], details
 
-        return code, []
+        return code, [], []
 
     def _is_block_header(self, line: str) -> bool:
         s = line.strip()
