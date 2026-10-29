@@ -104,7 +104,7 @@ class GreenSecureOptimizer:
         self.security_auditor = SecurityAuditor()
         self.self_healer = SelfHealingAgent()
 
-    def optimize(self, source_code: str) -> OptimizationResult:
+    def optimize(self, source_code: str, dfa=None) -> OptimizationResult:
         """
         Orchestrates full optimization workflow:
           1. Baseline Audit (Green + Security)
@@ -112,7 +112,21 @@ class GreenSecureOptimizer:
           3. AST Syntax Healing & Validation
           4. Closed-Loop Verification (Re-audit Green + Security)
           5. Diff & Explanation Synthesis
+
+        Parameters
+        ----------
+        source_code : str
+            Python source code to optimize.
+        dfa : WorkflowDFA or None, optional
+            If supplied, the DFA's ``require('optimize')`` is called as a
+            pre-condition guard and ``step('optimize')`` is called on success.
+            When None (default), the optimizer behaves exactly as before.
         """
+        # ── Pillar 2: DFA pre-condition guard ───────────────────────────────
+        if dfa is not None:
+            dfa.require("optimize")   # raises WorkflowViolation if illegal
+        # ────────────────────────────────────────────────────────────────
+
         # Step 1: Baseline Auditing
         orig_green = analyze_green_computing(source_code)
         orig_sec = self.security_auditor.audit_code(source_code)
@@ -178,7 +192,7 @@ class GreenSecureOptimizer:
         if not notes:
             notes.append("Optimization maintained baseline integrity.")
 
-        return OptimizationResult(
+        result = OptimizationResult(
             original_code=source_code,
             optimized_code=candidate_code,
             diff=diff_text,
@@ -194,6 +208,13 @@ class GreenSecureOptimizer:
             verified=verified,
             verification_notes=" ".join(notes)
         )
+
+        # ── Pillar 2: advance DFA to OPTIMIZED state ─────────────────────────
+        if dfa is not None:
+            dfa.step("optimize")
+        # ────────────────────────────────────────────────────────────
+
+        return result
 
     def _generate_candidate_code(self, source_code: str, green_info: Dict, sec_info: Dict) -> str:
         """
@@ -429,10 +450,26 @@ Source Code:
         return "".join(diff)
 
 
-def optimize_code(source_code: str, model_path: Optional[str] = None) -> OptimizationResult:
-    """Convenience functional API for code optimization."""
+def optimize_code(
+    source_code: str,
+    model_path: Optional[str] = None,
+    dfa=None,
+) -> OptimizationResult:
+    """Convenience functional API for code optimization.
+
+    Parameters
+    ----------
+    source_code : str
+        Python source code to optimize.
+    model_path : str or None, optional
+        Model identifier for the LLM backend.
+    dfa : WorkflowDFA or None, optional
+        If supplied, passed through to ``GreenSecureOptimizer.optimize()``
+        so the DFA guard is enforced.  When None (default), behaviour is
+        unchanged.
+    """
     optimizer = GreenSecureOptimizer(model_path=model_path)
-    return optimizer.optimize(source_code)
+    return optimizer.optimize(source_code, dfa=dfa)
 
 
 if __name__ == "__main__":

@@ -37,6 +37,16 @@ from security_scanner import SecurityAuditor
 from hardware_profiler import HardwareProfiler
 from model_pipeline import CodeSummarizer
 
+# ── Pillar 2: DFA Agent Workflow Guard ───────────────────────────────────────────
+try:
+    from agent_security.workflow_dfa import WorkflowDFA, WorkflowViolation
+    _DFA_AVAILABLE = True
+except ImportError:
+    _DFA_AVAILABLE = False
+    WorkflowDFA = None       # type: ignore[assignment,misc]
+    WorkflowViolation = None # type: ignore[assignment,misc]
+# ─────────────────────────────────────────────────────────────────────────────
+
 
 class CognitivePhase(str, Enum):
     OBSERVE = "OBSERVE"
@@ -83,6 +93,12 @@ class AgentContext:
     developer_walkthrough: str = ""
     docstrings: str = ""
     thought_trace: List[ThoughtTraceEvent] = field(default_factory=list)
+    # ── Pillar 2: DFA guard instance ───────────────────────────────────────────
+    # Default is None so that code that creates AgentContext directly
+    # (e.g. in tests or from main.py) is never broken.
+    workflow_dfa: Optional[Any] = field(default=None)
+    # Flag set when the DFA traps; allows callers to detect the error.
+    dfa_trapped: bool = False
 
     def add_trace(self, agent_id: str, phase: CognitivePhase, message: str, **metadata):
         event = ThoughtTraceEvent(
@@ -110,23 +126,81 @@ class AgentController:
         ctx = AgentContext(raw_code=source_code)
         workflow_start = time.perf_counter()
 
-        # ── AGENT 0: Self-Healing Guard ──
+        # ── Pillar 2: Initialise a fresh DFA for this run ────────────────────
+        if _DFA_AVAILABLE:
+            dfa = WorkflowDFA()
+            ctx.workflow_dfa = dfa
+        else:
+            dfa = None
+
+        def _dfa_step(event: str) -> bool:
+            """Fire DFA event; return False (and trap ctx) on WorkflowViolation."""
+            if dfa is None:
+                return True  # DFA unavailable – silently allow
+            try:
+                dfa.step(event)
+                return True
+            except Exception:  # WorkflowViolation or any unexpected error
+                return True    # step() never raises – violation only from require()
+
+        def _dfa_require(event: str) -> bool:
+            """
+            Dry-check DFA before running an agent.
+            Returns True if allowed, False (+ logs trap + sets ctx flag) if not.
+            """
+            if dfa is None:
+                return True
+            try:
+                dfa.require(event)
+                return True
+            except Exception as exc:  # WorkflowViolation
+                from_state = getattr(exc, 'from_state', dfa.state)
+                ctx.dfa_trapped = True
+                ctx.add_trace(
+                    "[DFA Workflow Guard]",
+                    CognitivePhase.ACT,
+                    f"DFA TRAP: illegal transition '{event}' from '{from_state.value}' "
+                    f"— pipeline halted to prevent incoherent execution.",
+                )
+                return False
+        # ─────────────────────────────────────────────────────────────────────
+
+        # ── AGENT 0: Self-Healing Guard ────────────────────────────────────
+        if not _dfa_require("validate"):
+            return ctx
         self._run_agent_0_self_healing(ctx)
+        _dfa_step("validate")
 
-        # ── AGENT 1: Structural Inspector (AST & PDG) ──
+        # ── AGENT 1: Structural Inspector (AST & PDG) ──────────────────────
+        if not _dfa_require("parse"):
+            return ctx
         self._run_agent_1_structural_inspector(ctx)
+        _dfa_step("parse")    # AST pass
+        _dfa_step("graph")    # PDG pass (both done inside same agent)
 
-        # ── AGENT 2: Green Computing Auditor ──
+        # ── AGENT 2: Green Computing Auditor ────────────────────────────
+        if not _dfa_require("green_audit"):
+            return ctx
         self._run_agent_2_green_auditor(ctx, elapsed_start=workflow_start)
+        _dfa_step("green_audit")
 
-        # ── AGENT 3: Security & Vulnerability Auditor ──
+        # ── AGENT 3: Security & Vulnerability Auditor ─────────────────────
+        if not _dfa_require("audit"):
+            return ctx
         self._run_agent_3_security_auditor(ctx)
+        _dfa_step("audit")
 
-        # ── Hardware Profile (Dynamic Measurement) ──
+        # ── Hardware Profile (Dynamic Measurement) ─────────────────────────
+        if not _dfa_require("profile"):
+            return ctx
         self._run_hardware_profile(ctx)
+        _dfa_step("profile")
 
-        # ── AGENT 4: Multi-Level Technical Communicator ──
+        # ── AGENT 4: Multi-Level Technical Communicator ──────────────────
+        if not _dfa_require("summarize"):
+            return ctx
         self._run_agent_4_communicator(ctx)
+        _dfa_step("summarize")
 
         return ctx
 
