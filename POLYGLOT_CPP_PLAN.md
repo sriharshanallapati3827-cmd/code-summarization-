@@ -86,12 +86,12 @@ The core objective is to preserve the existing **5-Agent workflow**, **4-Pillar 
 - [x] Standardize finding dictionary matching existing Python scanner format (`rule_id`, `cwe`, `severity`, `line`, `message`, `snippet`).
 
 ### Phase 4: C++ Self-Healing Agent Extension
-- [ ] Extend `self_healing.py` with C++ healing strategies:
+- [x] Extend `self_healing.py` with C++ healing strategies:
   - Diagnose Tree-sitter `ERROR` nodes.
   - Auto-append missing semicolons `;` on statement lines.
   - Auto-close unclosed braces `{}` and parentheses `()`.
   - Auto-detect missing foundational headers (`#include <iostream>`, `#include <vector>`).
-- [ ] Emit structured `repair_details` before/after records for C++ syntax repairs in the UI.
+- [x] Emit structured `repair_details` before/after records for C++ syntax repairs in the UI.
 
 ### Phase 5: C++ Execution & Profiler Engine
 - [ ] Update `hardware_profiler.py` with dual-mode C++ handling:
@@ -116,7 +116,7 @@ The core objective is to preserve the existing **5-Agent workflow**, **4-Pillar 
 | **1** | Tree-sitter Grammar Integration | ✅ Complete | `tree-sitter`, `tree-sitter-cpp`, `ParserFactory` |
 | **2** | C++ PDG & Data Flow Extractor | ✅ Complete | `cpp_pdg_extractor.py`, vis.js normalization |
 | **3** | C++ Security Auditor (CWEs) | ✅ Complete | AST/Tree-sitter queries for CWE-120, CWE-119, CWE-78 |
-| **4** | C++ Syntax Self-Healer | ⬜ Not Started | Semicolon `;` and brace `{}` autonomous repair |
+| **4** | C++ Syntax Self-Healer | ✅ Complete | Semicolon `;` and brace `{}` autonomous repair |
 | **5** | C++ Profiler & Sandbox | ⬜ Not Started | `g++` compilation harness + static complexity fallback |
 | **6** | UI & Polyglot Presets | ⬜ Not Started | Streamlit language toggle, C++ benchmarks |
 
